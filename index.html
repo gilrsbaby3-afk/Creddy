@@ -44,8 +44,8 @@
   <footer>No compartas tu contraseña. Las recargas se realizan manualmente y solo después de la aprobación correspondiente.</footer>
 </main>
 <script>
-  // Reemplaza el Project URL por el valor de Supabase. La publishable key es apta para el navegador.
-  const SUPABASE_URL = 'https://TU_PROYECTO.supabase.co';
+  // Project URL base de Supabase; la publishable key es apta para el navegador.
+  const SUPABASE_URL = 'https://uqkxpkgwtcxloeawkaiw.supabase.co';
   const SUPABASE_PUBLIC_KEY = 'sb_publishable_sLVgd2ZcQLI3hqXQ7nPOjQ_3CfTbEAs';
   const configured = !SUPABASE_URL.includes('TU_PROYECTO') && !SUPABASE_PUBLIC_KEY.includes('TU_');
   const client = configured ? window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLIC_KEY) : null;
