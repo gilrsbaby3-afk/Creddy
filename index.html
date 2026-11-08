@@ -1,864 +1,108 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#020617" />
-  <title>Recargas Venezuela</title>
-  <link rel="manifest" href="./manifest.json" />
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js').catch(console.error);
-      });
-    }
-  </script>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#07111f">
+  <title>Crédito y recargas</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script>
-    window.CREDDY_SUPABASE_URL = window.CREDDY_SUPABASE_URL || 'https://TU_PROYECTO.supabase.co';
-    window.CREDDY_SUPABASE_ANON_KEY = window.CREDDY_SUPABASE_ANON_KEY || 'TU_PUBLIC_KEY';
-  </script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    body { font-family: Inter, system-ui, -apple-system, sans-serif; }
-    .tab-content { display: none; }
-    .tab-content.active { display: block; }
-    .toast {
-      position: fixed;
-      right: 16px;
-      bottom: 90px;
-      background: rgba(15, 23, 42, 0.96);
-      border: 1px solid rgba(16, 185, 129, 0.8);
-      color: white;
-      padding: 10px 14px;
-      border-radius: 12px;
-      font-size: 12px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.35);
-      opacity: 0;
-      pointer-events: none;
-      transform: translateY(12px);
-      transition: 0.2s ease;
-      z-index: 1000;
-    }
-    .toast.show { opacity: 1; transform: translateY(0); }
+    :root{color-scheme:dark;--bg:#07111f;--panel:#101d2d;--line:#26364a;--text:#eff6ff;--muted:#a9bacd;--green:#34d399;--red:#fca5a5;--amber:#fcd34d}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,sans-serif}main{max-width:760px;margin:auto;padding:20px}.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;margin:16px 0}h1,h2,h3{line-height:1.2}h1{font-size:1.5rem;margin:0}h2{font-size:1.15rem;margin:0 0 12px}.muted{color:var(--muted);font-size:.92rem}.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:space-between}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}label{display:block;font-size:.9rem;margin:10px 0 5px}input,select,button{font:inherit}input,select{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:#091522;color:var(--text)}button{border:0;border-radius:10px;padding:11px 15px;background:var(--green);color:#06251b;font-weight:700;cursor:pointer}button.secondary{background:#243449;color:var(--text);border:1px solid var(--line)}button.danger{background:#7f1d1d;color:white}button:disabled{opacity:.55;cursor:wait}.hidden{display:none!important}.status{padding:10px 12px;border-radius:10px;margin:12px 0;background:#11263a;color:var(--muted)}.status.error{background:#421f27;color:#fecaca}.status.ok{background:#103326;color:#bbf7d0}.item{border-top:1px solid var(--line);padding:14px 0}.item:first-child{border-top:0}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.pill{display:inline-block;background:#243449;border-radius:999px;padding:3px 9px;font-size:.8rem}.amount{font-size:1.5rem;font-weight:750;color:var(--green)}small{color:var(--muted)}header{display:flex;justify-content:space-between;align-items:center;gap:12px}footer{padding:18px 0;color:var(--muted);font-size:.85rem}
   </style>
 </head>
-<body class="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-0 sm:p-4">
-
-  <main class="relative flex h-screen w-full max-w-md flex-col overflow-hidden bg-slate-900 shadow-2xl sm:h-[840px] sm:rounded-3xl sm:border sm:border-slate-800">
-    <header class="flex shrink-0 items-center justify-between bg-gradient-to-r from-emerald-600 to-teal-700 p-5 text-white">
-      <div>
-        <span class="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/30 bg-emerald-950/40 px-2.5 py-0.5 text-[10px] font-semibold text-emerald-100">
-          <i class="fa-solid fa-bolt"></i>
-          Crédito disponible: <span id="creditBadge">$0.00</span>
-        </span>
-        <h1 class="mt-1 text-lg font-bold">Recargas Venezuela</h1>
+<body>
+<main>
+  <header><div><h1>Crédito y recargas</h1><div class="muted">Solicitudes revisadas manualmente por administración</div></div><button id="signout" class="secondary hidden" type="button">Cerrar sesión</button></header>
+  <div id="notice" class="status" role="status" aria-live="polite">Conectando…</div>
+  <section id="auth" class="card hidden">
+    <div class="row"><h2 id="authTitle">Crear cuenta</h2><button id="toggleAuth" class="secondary" type="button">Ya tengo cuenta</button></div>
+    <form id="authForm">
+      <div id="signupFields">
+        <label for="fullName">Nombre y apellido</label><input id="fullName" autocomplete="name" maxlength="120" required>
+        <label for="cedula">Cédula</label><input id="cedula" autocomplete="off" maxlength="24" required>
+        <label for="phone">Teléfono</label><input id="phone" type="tel" autocomplete="tel" maxlength="20" required>
       </div>
-      <button id="adminOpenBtn" type="button" class="flex h-10 w-10 items-center justify-center rounded-full border border-emerald-500/30 bg-emerald-800 text-sm font-bold text-emerald-100">
-        CZ
-      </button>
-    </header>
+      <label for="email">Correo</label><input id="email" type="email" autocomplete="email" required>
+      <label for="password">Contraseña (mínimo 8 caracteres)</label><input id="password" type="password" autocomplete="current-password" minlength="8" required>
+      <div class="actions"><button id="authSubmit" type="submit">Crear cuenta</button></div>
+    </form>
+  </section>
 
-    <div class="flex-1 space-y-5 overflow-y-auto p-5 pb-24">
-      <section id="tab-inicio" class="tab-content active space-y-5">
-        <div class="relative overflow-hidden rounded-2xl border border-slate-800 bg-gradient-to-br from-slate-900 to-slate-950 p-4">
-          <div class="absolute right-0 top-0 h-32 w-32 rounded-full bg-emerald-500/5 blur-2xl" aria-hidden="true"></div>
-          <span class="text-xs font-medium text-slate-400">Deuda actual en la app</span>
-          <div id="debtTotalBig" class="mt-1 text-2xl font-extrabold text-white">Bs. 0,00</div>
-          <div class="mt-3 flex justify-between border-t border-slate-800 pt-3 text-xs text-slate-400">
-            <span>Crédito base: <strong id="creditBaseLabel" class="text-emerald-400">$10.00</strong></span>
-            <span>Vencimiento: <strong id="dueDateInicio">--</strong></span>
-          </div>
-        </div>
-
-        <div class="rounded-2xl border border-slate-800 bg-slate-950 p-4">
-          <div class="flex items-center justify-between">
-            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300">Estado del crédito</h3>
-            <span id="creditStateBadge" class="rounded-full border border-amber-400/30 bg-amber-500/10 px-2 py-1 text-[10px] font-bold text-amber-300">Pendiente</span>
-          </div>
-          <div class="mt-3 space-y-2 text-xs text-slate-400">
-            <div class="flex justify-between">
-              <span>Tasa BCV</span>
-              <strong id="bcvRateLabel" class="text-white">0</strong>
-            </div>
-            <div class="flex justify-between">
-              <span>Crédito disponible</span>
-              <strong id="creditAvailableLabel" class="text-emerald-400">Bs. 0,00</strong>
-            </div>
-            <div class="flex justify-between">
-              <span>Deuda por pagar</span>
-              <strong id="debtLabel" class="text-amber-300">Bs. 0,00</strong>
-            </div>
-          </div>
-        </div>
-
-        <form id="rechargeForm" class="space-y-5" novalidate>
-          <fieldset>
-            <legend class="mb-2 block text-xs font-medium uppercase tracking-wider text-slate-400">Selecciona operadora</legend>
-            <div class="grid grid-cols-3 gap-2">
-              <button type="button" class="operator-btn rounded-xl border border-emerald-500 bg-emerald-500/10 p-3 text-center text-xs font-bold text-emerald-400 transition-all" data-operator="Movistar" aria-pressed="true">Movistar</button>
-              <button type="button" class="operator-btn rounded-xl border border-slate-800 bg-slate-950 p-3 text-center text-xs font-bold text-slate-400 transition-all" data-operator="Digitel" aria-pressed="false">Digitel</button>
-              <button type="button" class="operator-btn rounded-xl border border-slate-800 bg-slate-950 p-3 text-center text-xs font-bold text-slate-400 transition-all" data-operator="Movilnet" aria-pressed="false">Movilnet</button>
-            </div>
-          </fieldset>
-
-          <div>
-            <label for="phoneNumber" class="mb-2 block text-xs font-medium uppercase tracking-wider text-slate-400">Número de teléfono</label>
-            <div class="relative">
-              <span class="absolute left-4 top-3.5 text-sm font-semibold text-slate-500">+58</span>
-              <input id="phoneNumber" type="tel" inputmode="numeric" maxlength="11" pattern="04[0-9]{9}" placeholder="04121234567" required class="w-full rounded-xl border border-slate-800 bg-slate-950 py-3 pl-12 pr-4 text-sm text-white focus:border-emerald-500 focus:outline-none" />
-            </div>
-            <p class="mt-1 text-[11px] text-slate-500">11 dígitos, comenzando con 04.</p>
-          </div>
-
-          <div>
-            <label for="customAmount" class="mb-2 block text-xs font-medium uppercase tracking-wider text-slate-400">Monto de recarga</label>
-            <div class="mb-3 grid grid-cols-3 gap-2">
-              <button type="button" class="amount-btn rounded-xl border border-slate-800 bg-slate-950 py-2 text-xs font-semibold transition-all" data-amount="150">Bs. 150</button>
-              <button type="button" class="amount-btn rounded-xl border border-emerald-500 bg-emerald-500/10 py-2 text-xs font-semibold text-emerald-400 transition-all" data-amount="500" aria-pressed="true">Bs. 500</button>
-              <button type="button" class="amount-btn rounded-xl border border-slate-800 bg-slate-950 py-2 text-xs font-semibold transition-all" data-amount="1000">Bs. 1.000</button>
-            </div>
-            <div class="relative">
-              <span class="absolute left-4 top-3.5 font-semibold text-slate-500">Bs.</span>
-              <input id="customAmount" type="number" min="1" step="1" value="500" required class="w-full rounded-xl border border-slate-800 bg-slate-950 py-3 pl-12 pr-4 text-base font-bold text-white focus:border-emerald-500 focus:outline-none" />
-            </div>
-          </div>
-
-          <div class="space-y-2.5 rounded-xl border border-slate-800 bg-slate-950 p-4 text-xs">
-            <div class="flex justify-between text-slate-400">
-              <span>Monto de recarga</span>
-              <span id="displayRecharge" class="font-medium text-white">Bs. 500,00</span>
-            </div>
-            <div class="flex justify-between text-slate-400">
-              <span>Comisión de financiamiento (10%)</span>
-              <span id="displayFee" class="font-medium text-emerald-400">+ Bs. 50,00</span>
-            </div>
-            <div class="flex justify-between border-t border-slate-800 pt-2 font-bold">
-              <span class="text-slate-200">Total a pagar en 15 días</span>
-              <span id="displayTotal" class="text-sm text-emerald-400">Bs. 550,00</span>
-            </div>
-          </div>
-
-          <button type="submit" class="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 py-3.5 text-sm font-bold text-slate-950 shadow-lg transition-all hover:bg-emerald-400">
-            <span>Solicitar recarga con crédito</span>
-            <i class="fa-solid fa-arrow-right text-xs"></i>
-          </button>
-
-          <p id="formMessage" class="hidden rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs leading-relaxed text-amber-200" role="status" aria-live="polite"></p>
-        </form>
-      </section>
-
-      <section id="tab-recargas" class="tab-content space-y-4" aria-labelledby="nav-recargas" hidden>
-        <h2 class="text-sm font-bold uppercase tracking-wider text-slate-200">Datos para Pago Móvil</h2>
-        <div class="space-y-2 rounded-2xl border border-emerald-500/30 bg-emerald-950/20 p-4">
-          <div class="flex items-center gap-2 text-emerald-400">
-            <i class="fa-solid fa-building-columns"></i>
-            <span class="text-xs font-bold uppercase">Banco Venezolano de Crédito (0104)</span>
-          </div>
-          <div class="space-y-1.5 pt-1 text-xs text-slate-300">
-            <p><strong>Cédula / RIF:</strong> <span class="select-all font-mono text-emerald-300">31.540.415</span></p>
-            <p><strong>Teléfono:</strong> <span class="select-all font-mono text-emerald-300">0412-6707872</span></p>
-          </div>
-        </div>
-
-        <h2 class="pt-2 text-sm font-bold uppercase tracking-wider text-slate-200">Historial de deudas / pagos</h2>
-        <div id="debtHistoryList" class="space-y-2.5"></div>
-      </section>
-
-      <section id="tab-perfil" class="tab-content space-y-4" aria-labelledby="nav-perfil" hidden>
-        <div class="space-y-3 rounded-2xl border border-slate-800 bg-slate-950 p-5 text-center">
-          <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-emerald-500/40 bg-emerald-500/20 text-xl font-bold text-emerald-400">CZ</div>
-          <div>
-            <h2 class="text-base font-bold text-white">Carlos Zambrano</h2>
-            <p class="text-xs text-slate-400">0412-6707872</p>
-          </div>
-          <span class="inline-block rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-400">
-            Nivel: Cliente verificado
-          </span>
-        </div>
-
-        <div class="space-y-3 rounded-2xl border border-slate-800 bg-slate-950 p-4 text-xs">
-          <div class="flex justify-between border-b border-slate-800 py-1">
-            <span class="text-slate-400">Límite de crédito activo</span><strong class="text-white">$10.00 USD</strong>
-          </div>
-          <div class="flex justify-between border-b border-slate-800 py-1">
-            <span class="text-slate-400">Plazo de pago</span><strong class="text-white">15 días</strong>
-          </div>
-          <div class="flex justify-between py-1">
-            <span class="text-slate-400">Comisión por préstamo</span><strong class="text-emerald-400">10%</strong>
-          </div>
-        </div>
-
-        <div class="space-y-3 rounded-2xl border border-slate-800 bg-slate-950 p-4">
-          <h2 class="text-sm font-bold text-white">Configuración</h2>
-          <label class="flex cursor-pointer items-center justify-between gap-3 text-xs">
-            <span>
-              <strong class="block text-slate-200">Recordatorios de vencimiento</strong>
-              <span class="text-slate-500">Preferencia guardada en este dispositivo</span>
-            </span>
-            <input id="reminderSetting" type="checkbox" class="h-4 w-4 accent-emerald-500">
-          </label>
-          <div class="border-t border-slate-800"></div>
-          <label class="flex cursor-pointer items-center justify-between gap-3 text-xs">
-            <span>
-              <strong class="block text-slate-200">Novedades y promociones</strong>
-              <span class="text-slate-500">Preferencia guardada en este dispositivo</span>
-            </span>
-            <input id="newsSetting" type="checkbox" class="h-4 w-4 accent-emerald-500">
-          </label>
-          <p id="settingsMessage" class="text-[11px] text-slate-500" role="status" aria-live="polite"></p>
-        </div>
-      </section>
-
-      <section id="tab-ayuda" class="tab-content space-y-4" aria-labelledby="nav-ayuda" hidden>
-        <h2 class="text-sm font-bold uppercase tracking-wider text-slate-200">Preguntas frecuentes</h2>
-        <div class="space-y-2 text-xs">
-          <article class="space-y-1 rounded-xl border border-slate-800 bg-slate-950 p-3.5">
-            <h3 class="flex items-center gap-2 font-bold text-white">
-              <i class="fa-solid fa-circle-question text-emerald-400"></i>
-              ¿Cómo funciona el crédito de $10?
-            </h3>
-            <p class="leading-relaxed text-slate-400">Se aprueba desde el panel administrativo, se convierte según la tasa BCV, y queda disponible para recargas. La deuda se paga en 15 días con un 10% de comisión financiada.</p>
-          </article>
-
-          <article class="space-y-1 rounded-xl border border-slate-800 bg-slate-950 p-3.5">
-            <h3 class="flex items-center gap-2 font-bold text-white">
-              <i class="fa-solid fa-circle-question text-emerald-400"></i>
-              ¿A qué banco hago el pago móvil?
-            </h3>
-            <p class="leading-relaxed text-slate-400">Banco Venezolano de Crédito (0104), Cédula 31.540.415, teléfono 0412-6707872.</p>
-          </article>
-
-          <article class="space-y-1 rounded-xl border border-slate-800 bg-slate-950 p-3.5">
-            <h3 class="flex items-center gap-2 font-bold text-white">
-              <i class="fa-solid fa-circle-question text-emerald-400"></i>
-              ¿Qué pasa si falta el pago?
-            </h3>
-            <p class="leading-relaxed text-slate-400">La deuda queda registrada con fecha de vencimiento y se puede confirmar cuando llega el pago.</p>
-          </article>
-        </div>
-
-        <div class="space-y-3 rounded-2xl border border-emerald-500/30 bg-gradient-to-r from-emerald-950/40 to-teal-950/40 p-4 text-center">
-          <div class="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500/20 text-lg text-emerald-400">
-            <i class="fa-brands fa-whatsapp"></i>
-          </div>
-          <div>
-            <h3 class="text-xs font-bold text-white">¿Tienes otra consulta?</h3>
-            <p class="mt-0.5 text-[11px] text-slate-400">Escríbenos por WhatsApp para recibir soporte.</p>
-          </div>
-          <a href="https://wa.me/584126707872?text=Hola%2C%20tengo%20una%20consulta%20sobre%20las%20recargas%20en%20la%20app" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50">
-            <i class="fa-brands fa-whatsapp"></i>
-            Abrir WhatsApp de soporte
-          </a>
-        </div>
-      </section>
-    </div>
-
-    <nav aria-label="Navegación principal" class="absolute bottom-0 left-0 right-0 grid grid-cols-4 border-t border-slate-800 bg-slate-900 px-1 py-2 text-center">
-      <button type="button" id="nav-inicio" data-tab="inicio" class="nav-btn flex flex-col items-center justify-center py-1 text-emerald-400" aria-current="page">
-        <i class="fa-solid fa-house text-base"></i><span class="mt-1 text-[10px] font-semibold">Inicio</span>
-      </button>
-      <button type="button" id="nav-recargas" data-tab="recargas" class="nav-btn flex flex-col items-center justify-center py-1 text-slate-400">
-        <i class="fa-solid fa-receipt text-base"></i><span class="mt-1 text-[10px] font-semibold">Recargas</span>
-      </button>
-      <button type="button" id="nav-perfil" data-tab="perfil" class="nav-btn flex flex-col items-center justify-center py-1 text-slate-400">
-        <i class="fa-solid fa-user text-base"></i><span class="mt-1 text-[10px] font-semibold">Perfil</span>
-      </button>
-      <button type="button" id="nav-ayuda" data-tab="ayuda" class="nav-btn flex flex-col items-center justify-center py-1 text-slate-400">
-        <i class="fa-solid fa-circle-question text-base"></i><span class="mt-1 text-[10px] font-semibold">Ayuda</span>
-      </button>
-    </nav>
-  </main>
-
-  <div id="adminModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/80 p-4">
-    <div class="w-full max-w-md rounded-3xl border border-slate-700 bg-slate-900 p-5 shadow-2xl">
-      <div class="flex items-center justify-between">
-        <h2 class="text-lg font-bold text-white">Panel administrativo</h2>
-        <button id="closeAdminBtn" type="button" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
-      </div>
-
-      <div class="mt-5 space-y-4">
-        <div class="rounded-2xl border border-slate-800 bg-slate-950 p-4">
-          <label for="bvcRateInput" class="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-400">Tasa BCV aplicada</label>
-          <div class="relative">
-            <span class="absolute left-4 top-3.5 text-sm text-slate-500">Bs.</span>
-            <input id="bvcRateInput" type="number" min="1" step="1" value="50" class="w-full rounded-xl border border-slate-800 bg-slate-950 py-3 pl-10 pr-4 text-sm text-white focus:border-emerald-500 focus:outline-none" />
-          </div>
-        </div>
-
-        <div class="flex gap-2">
-          <button id="approveCreditBtn" type="button" class="flex-1 rounded-xl bg-emerald-500 px-4 py-3 text-sm font-bold text-slate-950 hover:bg-emerald-400">
-            Aprobar crédito
-          </button>
-          <button id="resetAppBtn" type="button" class="flex-1 rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm font-bold text-slate-200 hover:border-slate-500">
-            Reiniciar app
-          </button>
-        </div>
-
-        <div class="rounded-2xl border border-slate-800 bg-slate-950 p-4">
-          <label for="payDebtInput" class="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-400">Registrar pago del cliente</label>
-          <div class="relative">
-            <span class="absolute left-4 top-3.5 text-sm text-slate-500">Bs.</span>
-            <input id="payDebtInput" type="number" min="1" step="1" value="0" class="w-full rounded-xl border border-slate-800 bg-slate-950 py-3 pl-10 pr-4 text-sm text-white focus:border-emerald-500 focus:outline-none" />
-          </div>
-          <button id="confirmPaymentBtn" type="button" class="mt-3 w-full rounded-xl bg-amber-500 px-4 py-3 text-sm font-bold text-slate-950 hover:bg-amber-400">
-            Confirmar pago
-          </button>
-        </div>
-      </div>
-    </div>
+  <div id="application" class="hidden">
+    <section class="card"><div class="row"><div><div class="muted">Hola</div><strong id="welcome"></strong></div><div><div class="muted">Crédito disponible</div><div id="available" class="amount">Bs. 0,00</div></div></div><div class="row" style="margin-top:12px"><span>Deuda actual</span><strong id="debt">Bs. 0,00</strong><span>Estado: <span id="role" class="pill">Cliente</span></span></div></section>
+    <section class="card"><h2>Solicitar crédito</h2><p class="muted">Envía una solicitud de crédito de $10. Se revisará manualmente; la solicitud no garantiza aprobación.</p><button id="creditRequest" type="button">Solicitar revisión</button></section>
+    <section class="card"><h2>Solicitar recarga</h2><p class="muted">La solicitud se registra para que la proceses manualmente con la operadora. El 10% de comisión se suma a la deuda.</p><form id="rechargeForm"><div class="grid"><div><label for="operator">Operadora</label><select id="operator"><option>Movistar</option><option>Digitel</option><option>Movilnet</option></select></div><div><label for="targetPhone">Teléfono a recargar</label><input id="targetPhone" type="tel" inputmode="numeric" placeholder="04121234567" pattern="04[0-9]{9}" maxlength="11" required></div><div><label for="amountBs">Monto Bs</label><input id="amountBs" type="number" min="1" step="0.01" required></div></div><p id="totalPreview" class="muted">Total de la deuda: Bs. 0,00</p><button type="submit">Enviar solicitud de recarga</button></form></section>
+    <section class="card"><h2>Reportar un pago</h2><p class="muted">Envía el monto y la referencia del pago móvil. El saldo se actualizará después de que lo verifiques.</p><form id="paymentForm"><div class="grid"><div><label for="paymentAmount">Monto Bs</label><input id="paymentAmount" type="number" min="0.01" step="0.01" required></div><div><label for="paymentRef">Referencia</label><input id="paymentRef" maxlength="100" required></div></div><button type="submit">Enviar pago para revisión</button></form></section>
+    <section class="card"><h2>Mis movimientos</h2><div id="history" class="muted">Cargando…</div></section>
+    <section id="admin" class="hidden">
+      <div class="card"><h2>Administración</h2><p class="muted">Solo una cuenta autorizada como administradora puede usar estas acciones. Confirma la recarga externamente antes de marcarla completada.</p><label for="rate">Tasa BCV (Bs/USD) para nuevas aprobaciones</label><input id="rate" type="number" min="0.01" step="0.01" value="1"><button id="refreshAdmin" class="secondary" type="button" style="margin-top:10px">Actualizar solicitudes</button></div>
+      <div class="card"><h2>Solicitudes de crédito</h2><div id="adminCredits" class="muted">Cargando…</div></div>
+      <div class="card"><h2>Recargas por procesar</h2><div id="adminRecharges" class="muted">Cargando…</div></div>
+      <div class="card"><h2>Pagos por verificar</h2><div id="adminPayments" class="muted">Cargando…</div></div>
+    </section>
   </div>
-
-  <div id="toast" class="toast" role="status" aria-live="polite"></div>
-
-  <script>
-    const STORAGE_KEY = 'recargas_venezuela_credit_app_v1';
-
-    const supabase = (window.supabase && window.CREDDY_SUPABASE_URL && window.CREDDY_SUPABASE_ANON_KEY && window.CREDDY_SUPABASE_URL !== 'https://TU_PROYECTO.supabase.co')
-      ? window.supabase.createClient(window.CREDDY_SUPABASE_URL, window.CREDDY_SUPABASE_ANON_KEY)
-      : null;
-
-    const defaultState = {
-      creditApproved: false,
-      usdLimit: 10,
-      bcvRate: 50,
-      creditAvailable: 0,
-      debtList: [],
-      debtTotal: 0,
-      dueDate: null,
-      settings: { reminder: true, promo: false },
-      selectedOperator: 'Movistar',
-      amount: 500
-    };
-
-    const state = loadState();
-
-    const ui = {
-      creditBadge: document.getElementById('creditBadge'),
-      debtTotalBig: document.getElementById('debtTotalBig'),
-      creditBaseLabel: document.getElementById('creditBaseLabel'),
-      dueDateInicio: document.getElementById('dueDateInicio'),
-      creditStateBadge: document.getElementById('creditStateBadge'),
-      bcvRateLabel: document.getElementById('bcvRateLabel'),
-      creditAvailableLabel: document.getElementById('creditAvailableLabel'),
-      debtLabel: document.getElementById('debtLabel'),
-      debtHistoryList: document.getElementById('debtHistoryList'),
-      formMessage: document.getElementById('formMessage'),
-      customAmount: document.getElementById('customAmount'),
-      displayRecharge: document.getElementById('displayRecharge'),
-      displayFee: document.getElementById('displayFee'),
-      displayTotal: document.getElementById('displayTotal'),
-      phoneNumber: document.getElementById('phoneNumber'),
-      toast: document.getElementById('toast'),
-      adminModal: document.getElementById('adminModal'),
-      bvcRateInput: document.getElementById('bvcRateInput'),
-      payDebtInput: document.getElementById('payDebtInput'),
-      reminderSetting: document.getElementById('reminderSetting'),
-      newsSetting: document.getElementById('newsSetting'),
-      settingsMessage: document.getElementById('settingsMessage')
-    };
-
-    function loadState() {
-      try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) return structuredClone(defaultState);
-        const parsed = JSON.parse(raw);
-        return { ...structuredClone(defaultState), ...parsed, settings: { ...defaultState.settings, ...(parsed.settings || {}) } };
-      } catch {
-        return structuredClone(defaultState);
-      }
-    }
-
-    function saveState() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    }
-
-    function formatBs(value) {
-      return Number(value || 0).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    }
-
-    function formatUsd(value) {
-      return Number(value || 0).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    }
-
-    function showToast(message) {
-      ui.toast.textContent = message;
-      ui.toast.classList.add('show');
-      clearTimeout(showToast.timeoutId);
-      showToast.timeoutId = setTimeout(() => ui.toast.classList.remove('show'), 2200);
-    }
-
-    function getDebtTotal() {
-      return state.debtList.reduce((sum, item) => sum + (item.status === 'pendiente' ? Number(item.total) : 0), 0);
-    }
-
-    function updateCreditStatus() {
-      const debtTotal = getDebtTotal();
-      const creditAvailable = Number(state.creditAvailable || 0);
-      const isApproved = state.creditApproved;
-
-      ui.creditBadge.textContent = isApproved ? `$${formatUsd(state.usdLimit)}` : '$0.00';
-      ui.bcvRateLabel.textContent = `Bs. ${Number(state.bcvRate || 0).toLocaleString('es-VE')}`;
-      ui.creditAvailableLabel.textContent = `Bs. ${formatBs(creditAvailable)}`;
-      ui.debtLabel.textContent = `Bs. ${formatBs(debtTotal)}`;
-      ui.debtTotalBig.textContent = `Bs. ${formatBs(debtTotal)}`;
-      ui.creditStateBadge.textContent = isApproved ? 'Aprobado' : 'Pendiente';
-      ui.creditStateBadge.className = `rounded-full px-2 py-1 text-[10px] font-bold ${isApproved ? 'border border-emerald-400/30 bg-emerald-500/10 text-emerald-300' : 'border border-amber-400/30 bg-amber-500/10 text-amber-300'}`;
-
-      const dueDate = state.dueDate || new Date();
-      document.getElementById('dueDateInicio').textContent = new Date(dueDate).toLocaleDateString('es-VE', { day: 'numeric', month: 'short', year: 'numeric' });
-
-      renderDebtHistory();
-    }
-
-    function renderDebtHistory() {
-      if (!state.debtList.length) {
-        ui.debtHistoryList.innerHTML = `
-          <div class="rounded-xl border border-slate-800 bg-slate-950 p-3 text-xs text-slate-500">
-            No hay deudas registradas.
-          </div>
-        `;
-        return;
-      }
-
-      ui.debtHistoryList.innerHTML = state.debtList.map(item => {
-        const statusClass = item.status === 'pendiente'
-          ? 'bg-amber-500/10 text-amber-300'
-          : 'bg-emerald-500/10 text-emerald-300';
-
-        return `
-          <div class="rounded-xl border border-slate-800 bg-slate-950 p-3">
-            <div class="flex items-center justify-between gap-2">
-              <div>
-                <span class="block font-bold text-white">${item.operator} - ${item.phone}</span>
-                <span class="text-[10px] text-slate-500">${new Date(item.date).toLocaleDateString('es-VE')} • Vence: ${new Date(item.dueDate).toLocaleDateString('es-VE')}</span>
-              </div>
-              <div class="text-right">
-                <span class="block font-bold text-emerald-400">Bs. ${formatBs(item.total)}</span>
-                <span class="rounded-full px-2 py-0.5 text-[10px] ${statusClass}">${item.status}</span>
-              </div>
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
-
-    async function syncStateToSupabase() {
-      if (!supabase) return;
-      try {
-        const payload = {
-          key: 'demo_state',
-          value: JSON.stringify({
-            creditApproved: state.creditApproved,
-            usdLimit: state.usdLimit,
-            bcvRate: state.bcvRate,
-            creditAvailable: state.creditAvailable,
-            debtList: state.debtList,
-            debtTotal: state.debtTotal,
-            dueDate: state.dueDate,
-            settings: state.settings,
-            selectedOperator: state.selectedOperator,
-            amount: state.amount
-          })
-        };
-
-        const { error } = await supabase.from('settings').upsert(payload, { onConflict: 'key' });
-        if (error) console.warn('syncStateToSupabase error', error);
-      } catch (error) {
-        console.warn('Supabase sync skipped:', error);
-      }
-    }
-
-    async function hydrateStateFromSupabase() {
-      if (!supabase) return;
-      try {
-        const { data, error } = await supabase
-          .from('settings')
-          .select('value')
-          .eq('key', 'demo_state')
-          .maybeSingle();
-
-        if (error) throw error;
-        if (!data || !data.value) return;
-
-        const hydrated = JSON.parse(data.value);
-        Object.assign(state, {
-          ...state,
-          ...hydrated,
-          settings: { ...defaultState.settings, ...(hydrated.settings || {}) }
-        });
-        saveState();
-      } catch (error) {
-        console.warn('Supabase hydration skipped:', error);
-      }
-    }
-
-    async function registerUser({ email, password, fullName, phone }) {
-      if (!supabase) {
-        console.warn('Supabase no configurado. Usa localStorage fallback.');
-        return { error: 'Supabase no configurado' };
-      }
-
-      const { data: authData, error: signUpError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: fullName
-          }
-        }
-      });
-
-      if (signUpError) return { error: signUpError };
-
-      const { error } = await supabase.from('users').upsert([
-        {
-          id: authData.user.id,
-          full_name: fullName,
-          phone,
-          email,
-          role: 'client'
-        }
-      ]);
-
-      return { error };
-    }
-
-    async function loginUser({ email, password }) {
-      if (!supabase) {
-        return { error: 'Supabase no configurado' };
-      }
-
-      return await supabase.auth.signInWithPassword({ email, password });
-    }
-
-    async function requestCreditFromSupabase() {
-      if (!supabase) return { error: 'Supabase no configurado' };
-
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user) return { error: userError || 'No autenticado' };
-
-      const { data, error } = await supabase.from('credit_requests').insert([
-        {
-          user_id: user.id,
-          amount_usd: 10,
-          bcv_rate: Number(state.bcvRate || 50),
-          status: 'pending'
-        }
-      ]);
-
-      return { data, error };
-    }
-
-    async function approveCreditRequest(requestId) {
-      if (!supabase) return { error: 'Supabase no configurado' };
-
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user) return { error: userError || 'No autenticado' };
-
-      const { data, error } = await supabase
-        .from('credit_requests')
-        .update({
-          status: 'approved',
-          reviewed_at: new Date().toISOString(),
-          reviewed_by: user.id
-        })
-        .eq('id', requestId);
-
-      if (error) return { error };
-
-      const { data: requestData, error: requestError } = await supabase
-        .from('credit_requests')
-        .select('*')
-        .eq('id', requestId)
-        .single();
-
-      if (requestError) return { error: requestError };
-
-      const { data: creditData, error: creditError } = await supabase.from('credits').insert([
-        {
-          user_id: requestData.user_id,
-          amount_usd: requestData.amount_usd,
-          bcv_rate: requestData.bcv_rate,
-          credit_available_bs: Number(requestData.amount_usd) * Number(requestData.bcv_rate),
-          status: 'active'
-        }
-      ]);
-
-      return { data: creditData, error: creditError };
-    }
-
-    async function registerManualRecharge(operator, phone, amountBs) {
-      if (!supabase) return { error: 'Supabase no configurado' };
-
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user) return { error: userError || 'No autenticado' };
-
-      const { data, error } = await supabase.from('recharges').insert([
-        {
-          user_id: user.id,
-          operator,
-          phone,
-          amount_bs: amountBs,
-          fee_bs: amountBs * 0.10,
-          total_bs: amountBs * 1.10,
-          status: 'completed'
-        }
-      ]);
-
-      return { data, error };
-    }
-
-    function approveCredit() {
-      const rate = Number(ui.bvcRateInput.value || 0);
-      if (!rate || rate <= 0) {
-        showToast('La tasa BCV debe ser mayor que 0');
-        return;
-      }
-
-      state.bcvRate = rate;
-      state.creditApproved = true;
-      state.creditAvailable = state.usdLimit * rate;
-      state.dueDate = new Date();
-      state.dueDate.setDate(state.dueDate.getDate() + 15);
-      ui.customAmount.value = String((state.amount || 500));
-      saveState();
-      syncStateToSupabase();
-      updateCreditStatus();
-      calculateBreakdown();
-      showToast('Crédito aprobado y disponible.');
-      ui.adminModal.classList.add('hidden');
-      ui.adminModal.classList.remove('flex');
-    }
-
-    function resetApp() {
-      const fresh = structuredClone(defaultState);
-      Object.assign(state, fresh);
-      saveState();
-      syncStateToSupabase();
-      applySettings();
-      updateCreditStatus();
-      calculateBreakdown();
-      showToast('App reiniciada');
-      ui.adminModal.classList.add('hidden');
-      ui.adminModal.classList.remove('flex');
-    }
-
-    function calculateBreakdown() {
-      const amount = Math.max(0, Number(ui.customAmount.value) || 0);
-      const fee = amount * 0.10;
-      const total = amount + fee;
-
-      ui.displayRecharge.textContent = `Bs. ${formatBs(amount)}`;
-      ui.displayFee.textContent = `+ Bs. ${formatBs(fee)}`;
-      ui.displayTotal.textContent = `Bs. ${formatBs(total)}`;
-
-      document.querySelectorAll('.amount-btn').forEach(btn => {
-        const isSelected = Number(btn.dataset.amount) === amount;
-        btn.setAttribute('aria-pressed', String(isSelected));
-        btn.classList.toggle('border-emerald-500', isSelected);
-        btn.classList.toggle('bg-emerald-500/10', isSelected);
-        btn.classList.toggle('text-emerald-400', isSelected);
-        btn.classList.toggle('border-slate-800', !isSelected);
-        btn.classList.toggle('bg-slate-950', !isSelected);
-      });
-    }
-
-    function submitRecharge(event) {
-      event.preventDefault();
-
-      if (!state.creditApproved) {
-        ui.formMessage.textContent = 'Debe aprobar el crédito antes de usarlo.';
-        ui.formMessage.classList.remove('hidden');
-        return;
-      }
-
-      const phone = ui.phoneNumber.value.trim();
-      if (!/^04\d{9}$/.test(phone)) {
-        ui.phoneNumber.reportValidity?.();
-        ui.formMessage.textContent = 'El número debe comenzar con 04 y tener 11 dígitos.';
-        ui.formMessage.classList.remove('hidden');
-        return;
-      }
-
-      const amount = Number(ui.customAmount.value || 0);
-      if (!amount || amount <= 0) {
-        ui.customAmount.reportValidity?.();
-        ui.formMessage.textContent = 'El monto debe ser mayor que 0.';
-        ui.formMessage.classList.remove('hidden');
-        return;
-      }
-
-      if (amount > state.creditAvailable) {
-        ui.formMessage.textContent = `No tienes suficiente crédito. Disponible: Bs. ${formatBs(state.creditAvailable)}`;
-        ui.formMessage.classList.remove('hidden');
-        return;
-      }
-
-      const fee = amount * 0.10;
-      const total = amount + fee;
-      const dueDate = new Date();
-      dueDate.setDate(dueDate.getDate() + 15);
-
-      state.creditAvailable = Math.max(0, state.creditAvailable - amount);
-      state.debtList.unshift({
-        id: Date.now(),
-        operator: state.selectedOperator,
-        phone,
-        amount,
-        fee,
-        total,
-        date: new Date().toISOString(),
-        dueDate: dueDate.toISOString(),
-        status: 'pendiente'
-      });
-      saveState();
-      syncStateToSupabase();
-      updateCreditStatus();
-      ui.formMessage.textContent = `Recarga creada con éxito. ${state.selectedOperator} para ${phone}. Total pendiente: Bs. ${formatBs(total)}.`;
-      ui.formMessage.classList.remove('hidden');
-      showToast('Recarga registrada');
-    }
-
-    function confirmPayment() {
-      const amountPaid = Number(ui.payDebtInput.value || 0);
-      if (!amountPaid || amountPaid <= 0) {
-        showToast('Monto de pago inválido');
-        return;
-      }
-
-      if (!state.debtList.length) {
-        showToast('No hay deudas pendientes');
-        return;
-      }
-
-      let remaining = amountPaid;
-      let adjusted = false;
-
-      state.debtList = state.debtList.map(item => {
-        if (item.status !== 'pendiente' || remaining <= 0) return item;
-
-        if (item.total <= remaining) {
-          remaining -= item.total;
-          adjusted = true;
-          return { ...item, status: 'pagado', paid: item.total };
-        }
-
-        const partial = remaining;
-        remaining = 0;
-        adjusted = true;
-        return { ...item, status: 'pendiente', total: item.total - partial, paid: partial };
-      });
-
-      if (adjusted) {
-        const restored = amountPaid > 0 ? Math.min(state.usdLimit * state.bcvRate, state.creditAvailable + amountPaid) : state.creditAvailable;
-        state.creditAvailable = Math.min(state.usdLimit * state.bcvRate, restored);
-      }
-
-      saveState();
-      syncStateToSupabase();
-      updateCreditStatus();
-      ui.payDebtInput.value = '0';
-      showToast('Pago confirmado correctamente');
-    }
-
-    function switchTab(tabName) {
-      document.querySelectorAll('.tab-content').forEach(el => {
-        const isActive = el.id === `tab-${tabName}`;
-        el.classList.toggle('active', isActive);
-        el.hidden = !isActive;
-      });
-
-      document.querySelectorAll('.nav-btn').forEach(el => {
-        const isActive = el.dataset.tab === tabName;
-        el.classList.toggle('text-emerald-400', isActive);
-        el.classList.toggle('text-slate-400', !isActive);
-        el.setAttribute('aria-current', isActive ? 'page' : 'false');
-      });
-    }
-
-    function applySettings() {
-      ui.reminderSetting.checked = !!state.settings.reminder;
-      ui.newsSetting.checked = !!state.settings.promo;
-      ui.settingsMessage.textContent = 'Preferencias guardadas localmente.';
-    }
-
-    document.querySelectorAll('.nav-btn').forEach(btn => {
-      btn.addEventListener('click', () => switchTab(btn.dataset.tab));
-    });
-
-    document.querySelectorAll('.operator-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        state.selectedOperator = btn.dataset.operator;
-        document.querySelectorAll('.operator-btn').forEach(operatorBtn => {
-          const isSelected = operatorBtn === btn;
-          operatorBtn.setAttribute('aria-pressed', String(isSelected));
-          operatorBtn.classList.toggle('border-emerald-500', isSelected);
-          operatorBtn.classList.toggle('bg-emerald-500/10', isSelected);
-          operatorBtn.classList.toggle('text-emerald-400', isSelected);
-          operatorBtn.classList.toggle('border-slate-800', !isSelected);
-          operatorBtn.classList.toggle('bg-slate-950', !isSelected);
-          operatorBtn.classList.toggle('text-slate-400', !isSelected);
-        });
-      });
-    });
-
-    document.querySelectorAll('.amount-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        ui.customAmount.value = btn.dataset.amount;
-        calculateBreakdown();
-      });
-    });
-
-    ui.customAmount.addEventListener('input', calculateBreakdown);
-    document.getElementById('rechargeForm').addEventListener('submit', submitRecharge);
-    document.getElementById('adminOpenBtn').addEventListener('click', () => {
-      ui.adminModal.classList.remove('hidden');
-      ui.adminModal.classList.add('flex');
-      ui.bvcRateInput.value = state.bcvRate || 50;
-    });
-
-    document.getElementById('closeAdminBtn').addEventListener('click', () => {
-      ui.adminModal.classList.add('hidden');
-      ui.adminModal.classList.remove('flex');
-    });
-
-    document.getElementById('approveCreditBtn').addEventListener('click', approveCredit);
-    document.getElementById('resetAppBtn').addEventListener('click', resetApp);
-    document.getElementById('confirmPaymentBtn').addEventListener('click', confirmPayment);
-
-    ui.reminderSetting.addEventListener('change', () => {
-      state.settings.reminder = ui.reminderSetting.checked;
-      saveState();
-      syncStateToSupabase();
-      ui.settingsMessage.textContent = 'Preferencia guardada.';
-    });
-
-    ui.newsSetting.addEventListener('change', () => {
-      state.settings.promo = ui.newsSetting.checked;
-      saveState();
-      syncStateToSupabase();
-      ui.settingsMessage.textContent = 'Preferencia guardada.';
-    });
-
-    if (supabase) {
-      hydrateStateFromSupabase().finally(() => {
-        applySettings();
-        updateCreditStatus();
-        calculateBreakdown();
-      });
-    } else {
-      applySettings();
-      updateCreditStatus();
-      calculateBreakdown();
-    }
-
-    window.CREDDY_REGISTER_USER = registerUser;
-    window.CREDDY_LOGIN_USER = loginUser;
-    window.CREDDY_REQUEST_CREDIT = requestCreditFromSupabase;
-    window.CREDDY_APPROVE_CREDIT = approveCreditRequest;
-    window.CREDDY_REGISTER_RECHARGE = registerManualRecharge;
-  </script>
+  <footer>No compartas tu contraseña. Las recargas se realizan manualmente y solo después de la aprobación correspondiente.</footer>
+</main>
+<script>
+  // Reemplaza ambos valores por Project URL y Publishable/anon key de Supabase.
+  const SUPABASE_URL = 'https://TU_PROYECTO.supabase.co';
+  const SUPABASE_PUBLIC_KEY = 'TU_PUBLISHABLE_O_ANON_KEY';
+  const configured = !SUPABASE_URL.includes('TU_PROYECTO') && !SUPABASE_PUBLIC_KEY.includes('TU_');
+  const client = configured ? window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLIC_KEY) : null;
+  const $ = (id) => document.getElementById(id);
+  let isSignup = true;
+  let currentUser = null;
+  const fmt = (n) => Number(n || 0).toLocaleString('es-VE',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const escapeHtml = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  function notice(text, type='') { $('notice').textContent=text; $('notice').className='status'+(type?' '+type:''); }
+  function setBusy(btn,busy) { btn.disabled=busy; }
+  function showDate(value) { return value ? new Date(value).toLocaleString('es-VE') : '—'; }
+  async function loadProfileAndData() {
+    const {data:{user},error:userError}=await client.auth.getUser();
+    if(userError || !user){currentUser=null;$('auth').classList.remove('hidden');$('application').classList.add('hidden');$('signout').classList.add('hidden');return;}
+    currentUser=user;$('auth').classList.add('hidden');$('application').classList.remove('hidden');$('signout').classList.remove('hidden');
+    const {data:profile,error:profileError}=await client.from('app_profiles').select('full_name,is_admin').eq('id',user.id).single();
+    if(profileError) throw profileError;
+    $('welcome').textContent=profile.full_name;$('role').textContent=profile.is_admin?'Administración':'Cliente';$('admin').classList.toggle('hidden',!profile.is_admin);
+    const {data:account,error:accountError}=await client.from('credit_accounts').select('available_bs,debt_bs').eq('user_id',user.id).maybeSingle();
+    if(accountError) throw accountError;
+    $('available').textContent='Bs. '+fmt(account?.available_bs);$('debt').textContent='Bs. '+fmt(account?.debt_bs);
+    await loadHistory();if(profile.is_admin) await loadAdmin();
+  }
+  async function loadHistory(){
+    const [credits,recharges,payments]=await Promise.all([
+      client.from('credit_requests').select('id,amount_usd,status,created_at').eq('user_id',currentUser.id).order('created_at',{ascending:false}),
+      client.from('recharge_orders').select('id,operator,phone,amount_bs,total_bs,status,created_at').eq('user_id',currentUser.id).order('created_at',{ascending:false}),
+      client.from('payment_reports').select('id,amount_bs,reference,status,created_at').eq('user_id',currentUser.id).order('created_at',{ascending:false})
+    ]);
+    for(const result of [credits,recharges,payments]) if(result.error) throw result.error;
+    const entries=[...(credits.data||[]).map(x=>({kind:'Crédito $'+fmt(x.amount_usd),status:x.status,date:x.created_at})),...(recharges.data||[]).map(x=>({kind:`Recarga ${x.operator} ${x.phone} · Bs. ${fmt(x.total_bs)}`,status:x.status,date:x.created_at})),...(payments.data||[]).map(x=>({kind:`Pago Bs. ${fmt(x.amount_bs)} · ref. ${x.reference}`,status:x.status,date:x.created_at}))].sort((a,b)=>new Date(b.date)-new Date(a.date));
+    $('history').innerHTML=entries.length?entries.map(x=>`<div class="item"><div class="row"><strong>${escapeHtml(x.kind)}</strong><span class="pill">${escapeHtml(x.status)}</span></div><small>${escapeHtml(showDate(x.date))}</small></div>`).join(''):'Todavía no tienes movimientos.';
+  }
+  async function loadAdmin(){
+    const [credits,recharges,payments]=await Promise.all([
+      client.from('credit_requests').select('id,user_id,amount_usd,created_at').eq('status','pending').order('created_at'),
+      client.from('recharge_orders').select('id,user_id,operator,phone,amount_bs,total_bs,created_at').eq('status','pending').order('created_at'),
+      client.from('payment_reports').select('id,user_id,amount_bs,reference,created_at').eq('status','pending').order('created_at')
+    ]);
+    for(const result of [credits,recharges,payments]) if(result.error) throw result.error;
+    const ids=[...new Set([...(credits.data||[]),...(recharges.data||[]),...(payments.data||[])].map(x=>x.user_id))];
+    let profiles={};
+    if(ids.length){const {data,error}=await client.from('app_profiles').select('id,full_name,phone,national_id').in('id',ids);if(error)throw error;profiles=Object.fromEntries((data||[]).map(x=>[x.id,x]));}
+    $('adminCredits').innerHTML=credits.data.length?credits.data.map(x=>`<div class="item"><strong>${escapeHtml(profiles[x.user_id]?.full_name||'Cliente')}</strong><div><small>Cédula ${escapeHtml(profiles[x.user_id]?.national_id||'')} · ${escapeHtml(profiles[x.user_id]?.phone||'')} · $${fmt(x.amount_usd)} · ${showDate(x.created_at)}</small></div><div class="actions"><button data-action="approve-credit" data-id="${x.id}">Aprobar al cambio indicado</button><button class="danger" data-action="reject-credit" data-id="${x.id}">Rechazar</button></div></div>`).join(''):'No hay solicitudes pendientes.';
+    $('adminRecharges').innerHTML=recharges.data.length?recharges.data.map(x=>`<div class="item"><strong>${escapeHtml(profiles[x.user_id]?.full_name||'Cliente')}</strong><div><small>${escapeHtml(profiles[x.user_id]?.phone||'')} · ${escapeHtml(x.operator)} ${escapeHtml(x.phone)} · Recarga Bs. ${fmt(x.amount_bs)} / deuda Bs. ${fmt(x.total_bs)}</small></div><div class="actions"><button data-action="complete-recharge" data-id="${x.id}">Marcar recarga completada</button><button class="danger" data-action="reject-recharge" data-id="${x.id}">Rechazar y devolver saldo</button></div></div>`).join(''):'No hay recargas pendientes.';
+    $('adminPayments').innerHTML=payments.data.length?payments.data.map(x=>`<div class="item"><strong>${escapeHtml(profiles[x.user_id]?.full_name||'Cliente')}</strong><div><small>Cédula ${escapeHtml(profiles[x.user_id]?.national_id||'')} · Bs. ${fmt(x.amount_bs)} · Ref. ${escapeHtml(x.reference)}</small></div><div class="actions"><button data-action="confirm-payment" data-id="${x.id}">Confirmar pago verificado</button><button class="danger" data-action="reject-payment" data-id="${x.id}">Rechazar</button></div></div>`).join(''):'No hay pagos por verificar.';
+  }
+  $('toggleAuth').addEventListener('click',()=>{isSignup=!isSignup;$('authTitle').textContent=isSignup?'Crear cuenta':'Iniciar sesión';$('authSubmit').textContent=isSignup?'Crear cuenta':'Iniciar sesión';$('signupFields').classList.toggle('hidden',!isSignup);$('toggleAuth').textContent=isSignup?'Ya tengo cuenta':'Crear cuenta';$('password').autocomplete=isSignup?'new-password':'current-password';});
+  $('authForm').addEventListener('submit',async e=>{e.preventDefault();const btn=$('authSubmit');setBusy(btn,true);try{const email=$('email').value.trim(),password=$('password').value;if(isSignup){const {error}=await client.auth.signUp({email,password,options:{data:{full_name:$('fullName').value.trim(),national_id:$('cedula').value.trim(),phone:$('phone').value.trim()}}});if(error)throw error;notice('Cuenta creada. Revisa tu correo para confirmar la dirección antes de iniciar sesión.','ok');}else{const {error}=await client.auth.signInWithPassword({email,password});if(error)throw error;notice('Sesión iniciada.','ok');await loadProfileAndData();}}catch(err){notice(err.message||'No se pudo completar la operación.','error');}finally{setBusy(btn,false);}});
+  $('signout').addEventListener('click',async()=>{const {error}=await client.auth.signOut();if(error)notice(error.message,'error');else{notice('Sesión cerrada.');await loadProfileAndData();}});
+  $('creditRequest').addEventListener('click',async()=>{setBusy($('creditRequest'),true);try{const {error}=await client.rpc('request_credit');if(error)throw error;notice('Solicitud enviada para revisión.','ok');await loadProfileAndData();}catch(err){notice(err.message||'No se pudo enviar la solicitud.','error');}finally{setBusy($('creditRequest'),false);}});
+  $('amountBs').addEventListener('input',()=>{$('totalPreview').textContent='Total de la deuda: Bs. '+fmt(Number($('amountBs').value||0)*1.1);});
+  $('rechargeForm').addEventListener('submit',async e=>{e.preventDefault();const btn=e.submitter;setBusy(btn,true);try{const {error}=await client.rpc('request_recharge',{p_operator:$('operator').value,p_phone:$('targetPhone').value.trim(),p_amount_bs:Number($('amountBs').value)});if(error)throw error;notice('Solicitud enviada. La recarga queda pendiente de procesamiento manual.','ok');e.target.reset();$('totalPreview').textContent='Total de la deuda: Bs. 0,00';await loadProfileAndData();}catch(err){notice(err.message||'No se pudo enviar la recarga.','error');}finally{setBusy(btn,false);}});
+  $('paymentForm').addEventListener('submit',async e=>{e.preventDefault();const btn=e.submitter;setBusy(btn,true);try{const {error}=await client.rpc('submit_payment_report',{p_amount_bs:Number($('paymentAmount').value),p_reference:$('paymentRef').value.trim()});if(error)throw error;notice('Pago enviado para verificación; el saldo no cambia hasta confirmarlo.','ok');e.target.reset();await loadProfileAndData();}catch(err){notice(err.message||'No se pudo enviar el pago.','error');}finally{setBusy(btn,false);}});
+  $('refreshAdmin').addEventListener('click',()=>loadProfileAndData().catch(e=>notice(e.message,'error')));
+  $('admin').addEventListener('click',async e=>{const btn=e.target.closest('button[data-action]');if(!btn)return;setBusy(btn,true);try{const id=btn.dataset.id,action=btn.dataset.action;let result;if(action==='approve-credit')result=await client.rpc('admin_review_credit',{p_request_id:id,p_approved:true,p_bcv_rate:Number($('rate').value)});if(action==='reject-credit')result=await client.rpc('admin_review_credit',{p_request_id:id,p_approved:false,p_bcv_rate:null});if(action==='complete-recharge')result=await client.rpc('admin_set_recharge_status',{p_recharge_id:id,p_status:'completed'});if(action==='reject-recharge')result=await client.rpc('admin_set_recharge_status',{p_recharge_id:id,p_status:'rejected'});if(action==='confirm-payment')result=await client.rpc('admin_review_payment',{p_payment_id:id,p_approved:true});if(action==='reject-payment')result=await client.rpc('admin_review_payment',{p_payment_id:id,p_approved:false});if(result?.error)throw result.error;notice('Acción guardada.','ok');await loadProfileAndData();}catch(err){notice(err.message||'La acción no pudo completarse.','error');}finally{setBusy(btn,false);}});
+  (async()=>{if(!configured){$('auth').classList.remove('hidden');notice('Falta configurar Project URL y la clave pública de Supabase en este archivo. No uses la secret/service_role key.','error');return;}try{await loadProfileAndData();if(currentUser)notice('Conectado a Supabase.');else notice('Inicia sesión o crea una cuenta.');}catch(err){notice(err.message||'No se pudo cargar la app. Revisa el SQL y las credenciales.','error');}})();
+</script>
 </body>
 </html>
