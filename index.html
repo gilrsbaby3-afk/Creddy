@@ -16,8 +16,8 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    window.CREDDY_SUPABASE_URL = window.CREDDY_SUPABASE_URL || '';
-    window.CREDDY_SUPABASE_ANON_KEY = window.CREDDY_SUPABASE_ANON_KEY || '';
+    window.CREDDY_SUPABASE_URL = window.CREDDY_SUPABASE_URL || 'https://TU_PROYECTO.supabase.co';
+    window.CREDDY_SUPABASE_ANON_KEY = window.CREDDY_SUPABASE_ANON_KEY || 'TU_PUBLIC_KEY';
   </script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
@@ -315,61 +315,9 @@
   <script>
     const STORAGE_KEY = 'recargas_venezuela_credit_app_v1';
 
-    const supabaseClient = (() => {
-      const url = window.CREDDY_SUPABASE_URL;
-      const key = window.CREDDY_SUPABASE_ANON_KEY;
-      if (!url || !key || !window.supabase) return null;
-      return window.supabase.createClient(url, key);
-    })();
-
-    async function syncStateToSupabase() {
-      if (!supabaseClient) return;
-      try {
-        const payload = {
-          key: 'demo_state',
-          value: JSON.stringify({
-            creditApproved: state.creditApproved,
-            usdLimit: state.usdLimit,
-            bcvRate: state.bcvRate,
-            creditAvailable: state.creditAvailable,
-            debtList: state.debtList,
-            debtTotal: state.debtTotal,
-            dueDate: state.dueDate,
-            settings: state.settings,
-            selectedOperator: state.selectedOperator,
-            amount: state.amount
-          })
-        };
-
-        await supabaseClient.from('settings').upsert(payload, { onConflict: 'key' });
-      } catch (error) {
-        console.warn('Supabase sync skipped:', error);
-      }
-    }
-
-    async function hydrateStateFromSupabase() {
-      if (!supabaseClient) return;
-      try {
-        const { data, error } = await supabaseClient
-          .from('settings')
-          .select('value')
-          .eq('key', 'demo_state')
-          .maybeSingle();
-
-        if (error) throw error;
-        if (!data || !data.value) return;
-
-        const hydrated = JSON.parse(data.value);
-        Object.assign(state, {
-          ...state,
-          ...hydrated,
-          settings: { ...defaultState.settings, ...(hydrated.settings || {}) }
-        });
-        saveState();
-      } catch (error) {
-        console.warn('Supabase hydration skipped:', error);
-      }
-    }
+    const supabase = (window.supabase && window.CREDDY_SUPABASE_URL && window.CREDDY_SUPABASE_ANON_KEY && window.CREDDY_SUPABASE_URL !== 'https://TU_PROYECTO.supabase.co')
+      ? window.supabase.createClient(window.CREDDY_SUPABASE_URL, window.CREDDY_SUPABASE_ANON_KEY)
+      : null;
 
     const defaultState = {
       creditApproved: false,
@@ -494,6 +442,172 @@
           </div>
         `;
       }).join('');
+    }
+
+    async function syncStateToSupabase() {
+      if (!supabase) return;
+      try {
+        const payload = {
+          key: 'demo_state',
+          value: JSON.stringify({
+            creditApproved: state.creditApproved,
+            usdLimit: state.usdLimit,
+            bcvRate: state.bcvRate,
+            creditAvailable: state.creditAvailable,
+            debtList: state.debtList,
+            debtTotal: state.debtTotal,
+            dueDate: state.dueDate,
+            settings: state.settings,
+            selectedOperator: state.selectedOperator,
+            amount: state.amount
+          })
+        };
+
+        const { error } = await supabase.from('settings').upsert(payload, { onConflict: 'key' });
+        if (error) console.warn('syncStateToSupabase error', error);
+      } catch (error) {
+        console.warn('Supabase sync skipped:', error);
+      }
+    }
+
+    async function hydrateStateFromSupabase() {
+      if (!supabase) return;
+      try {
+        const { data, error } = await supabase
+          .from('settings')
+          .select('value')
+          .eq('key', 'demo_state')
+          .maybeSingle();
+
+        if (error) throw error;
+        if (!data || !data.value) return;
+
+        const hydrated = JSON.parse(data.value);
+        Object.assign(state, {
+          ...state,
+          ...hydrated,
+          settings: { ...defaultState.settings, ...(hydrated.settings || {}) }
+        });
+        saveState();
+      } catch (error) {
+        console.warn('Supabase hydration skipped:', error);
+      }
+    }
+
+    async function registerUser({ email, password, fullName, phone }) {
+      if (!supabase) {
+        console.warn('Supabase no configurado. Usa localStorage fallback.');
+        return { error: 'Supabase no configurado' };
+      }
+
+      const { data: authData, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName
+          }
+        }
+      });
+
+      if (signUpError) return { error: signUpError };
+
+      const { error } = await supabase.from('users').upsert([
+        {
+          id: authData.user.id,
+          full_name: fullName,
+          phone,
+          email,
+          role: 'client'
+        }
+      ]);
+
+      return { error };
+    }
+
+    async function loginUser({ email, password }) {
+      if (!supabase) {
+        return { error: 'Supabase no configurado' };
+      }
+
+      return await supabase.auth.signInWithPassword({ email, password });
+    }
+
+    async function requestCreditFromSupabase() {
+      if (!supabase) return { error: 'Supabase no configurado' };
+
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) return { error: userError || 'No autenticado' };
+
+      const { data, error } = await supabase.from('credit_requests').insert([
+        {
+          user_id: user.id,
+          amount_usd: 10,
+          bcv_rate: Number(state.bcvRate || 50),
+          status: 'pending'
+        }
+      ]);
+
+      return { data, error };
+    }
+
+    async function approveCreditRequest(requestId) {
+      if (!supabase) return { error: 'Supabase no configurado' };
+
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) return { error: userError || 'No autenticado' };
+
+      const { data, error } = await supabase
+        .from('credit_requests')
+        .update({
+          status: 'approved',
+          reviewed_at: new Date().toISOString(),
+          reviewed_by: user.id
+        })
+        .eq('id', requestId);
+
+      if (error) return { error };
+
+      const { data: requestData, error: requestError } = await supabase
+        .from('credit_requests')
+        .select('*')
+        .eq('id', requestId)
+        .single();
+
+      if (requestError) return { error: requestError };
+
+      const { data: creditData, error: creditError } = await supabase.from('credits').insert([
+        {
+          user_id: requestData.user_id,
+          amount_usd: requestData.amount_usd,
+          bcv_rate: requestData.bcv_rate,
+          credit_available_bs: Number(requestData.amount_usd) * Number(requestData.bcv_rate),
+          status: 'active'
+        }
+      ]);
+
+      return { data: creditData, error: creditError };
+    }
+
+    async function registerManualRecharge(operator, phone, amountBs) {
+      if (!supabase) return { error: 'Supabase no configurado' };
+
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) return { error: userError || 'No autenticado' };
+
+      const { data, error } = await supabase.from('recharges').insert([
+        {
+          user_id: user.id,
+          operator,
+          phone,
+          amount_bs: amountBs,
+          fee_bs: amountBs * 0.10,
+          total_bs: amountBs * 1.10,
+          status: 'completed'
+        }
+      ]);
+
+      return { data, error };
     }
 
     function approveCredit() {
@@ -728,7 +842,7 @@
       ui.settingsMessage.textContent = 'Preferencia guardada.';
     });
 
-    if (supabaseClient) {
+    if (supabase) {
       hydrateStateFromSupabase().finally(() => {
         applySettings();
         updateCreditStatus();
@@ -739,6 +853,12 @@
       updateCreditStatus();
       calculateBreakdown();
     }
+
+    window.CREDDY_REGISTER_USER = registerUser;
+    window.CREDDY_LOGIN_USER = loginUser;
+    window.CREDDY_REQUEST_CREDIT = requestCreditFromSupabase;
+    window.CREDDY_APPROVE_CREDIT = approveCreditRequest;
+    window.CREDDY_REGISTER_RECHARGE = registerManualRecharge;
   </script>
 </body>
 </html>
