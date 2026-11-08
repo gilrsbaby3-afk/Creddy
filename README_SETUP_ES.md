@@ -5,8 +5,6 @@ Esta versión registra clientes con correo/contraseña, guarda nombre, cédula y
 ## Antes de usar
 
 - Haz estas pruebas primero con cuentas ficticias, sin dinero ni datos reales. Confirma con tu asesor local los requisitos legales y de privacidad para manejar datos de identificación y crédito.
-- No publiques la app ni la uses para clientes hasta validar el flujo completo y la configuración del proyecto.
-- Nunca pongas una `secret`/`service_role` key en el navegador. El frontend solo usa Project URL y la clave pública (`publishable` o `anon`).
 
 ## Supabase
 
