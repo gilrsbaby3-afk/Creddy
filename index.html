@@ -4,471 +4,240 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#07111f">
-  <title>Crédito y recargas</title>
+  <title>Creddy | Crédito y recargas</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    :root{color-scheme:dark;--bg:#07111f;--panel:#101d2d;--line:#26364a;--text:#eff6ff;--muted:#a9bacd;--green:#34d399;--red:#fca5a5;--amber:#fcd34d}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,sans-serif}main{max-width:760px;margin:auto;padding:20px}h1,h2,h3{margin:0;line-height:1.2}p{margin:0}.muted{color:var(--muted);font-size:.92rem}.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:space-between}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;margin-top:16px}.header{display:flex;justify-content:space-between;align-items:center;gap:12px}.actions{display:flex;gap:10px;flex-wrap:wrap}.button,.secondary,.danger,.pill{border:none;border-radius:12px;padding:12px 16px;font-weight:700;cursor:pointer;transition:.2s ease}button:disabled{opacity:.6;cursor:wait}.button{background:var(--green);color:#06251b}.secondary{background:#243449;color:var(--text);border:1px solid var(--line)}.danger{background:#7f1d1d;color:white}.pill{background:#243449;color:var(--text);padding:6px 10px;font-size:.78rem}.amount{font-size:2rem;font-weight:800;color:var(--green)}.status{padding:12px 14px;border-radius:12px;margin-top:16px;background:#11263a;color:var(--text)}.status.error{background:#421f27;color:#fecaca}.status.ok{background:#103326;color:#bbf7d0}.hidden{display:none!important}label{display:block;margin-top:10px;color:var(--muted);font-size:.9rem}input,select{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:#091522;color:var(--text);margin-top:6px}.input-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}.item{padding:12px 0;border-top:1px solid var(--line)}.item:first-child{border-top:none}.footer{padding:20px 0 10px;color:var(--muted);font-size:.82rem}.count{color:var(--muted);font-size:.8rem}.admin-actions{display:flex;flex-wrap:wrap;gap:8px}.admin-actions button{padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:#1a2b3d;color:var(--text)}.admin-actions .danger{background:#7f1d1d}textarea{width:100%;min-height:80px;border-radius:10px;background:#091522;color:var(--text);border:1px solid var(--line);padding:10px;margin-top:8px}
+    :root{color-scheme:dark;--bg:#07111f;--panel:#101d2d;--line:#26364a;--text:#eff6ff;--muted:#a9bacd;--green:#34d399;--red:#fca5a5}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}main{max-width:760px;margin:auto;padding:16px}h1,h2,h3{line-height:1.2}h1{font-size:1.55rem;margin:0}h2{font-size:1.2rem;margin:0 0 10px}.muted{color:var(--muted);font-size:.92rem}.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px;margin:14px 0}.header,.row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.header{padding:18px}.actions,.nav{display:flex;gap:8px;flex-wrap:wrap}.nav{position:sticky;top:0;z-index:2;background:var(--bg);padding:10px 0}.button,button{font:inherit;border:0;border-radius:11px;padding:11px 15px;font-weight:700;cursor:pointer}.button{background:var(--green);color:#06251b}.secondary,.nav button{background:#243449;color:var(--text);border:1px solid var(--line)}.nav button[aria-current="page"]{background:var(--green);color:#06251b}.danger{background:#7f1d1d;color:white}button:disabled{opacity:.55;cursor:wait}.status{padding:12px 14px;border-radius:12px;margin:12px 0;background:#11263a;overflow-wrap:anywhere}.status.error{background:#421f27;color:#fecaca}.status.ok{background:#103326;color:#bbf7d0}.hidden{display:none!important}.amount{font-size:2rem;font-weight:800;color:var(--green)}label{display:block;color:var(--muted);font-size:.9rem;margin:10px 0 5px}input,select{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:#091522;color:var(--text);font:inherit}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}.pill{display:inline-block;background:#243449;border-radius:999px;padding:4px 10px}.item{padding:12px 0;border-top:1px solid var(--line)}.item:first-child{border-top:0}.admin-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.admin-actions button{padding:8px 11px;background:#243449;color:var(--text)}.admin-actions .danger{background:#7f1d1d}.faq details{border-top:1px solid var(--line);padding:12px 0}.faq summary{font-weight:700;cursor:pointer}.faq p{margin:8px 0 0}.big-link{display:inline-flex;text-decoration:none;align-items:center;justify-content:center;margin-top:12px}.soon{opacity:.7}.footer{padding:14px 0;color:var(--muted);font-size:.82rem}a{color:var(--green)}
   </style>
 </head>
 <body>
 <main>
   <header class="header card">
-    <div>
-      <h1>Crédito y recargas</h1>
-      <div class="muted">Solicitudes revisadas manualmente por administración</div>
-    </div>
+    <div><h1>Creddy</h1><div class="muted">Crédito y recargas con revisión manual</div></div>
     <button id="signout" class="secondary hidden" type="button">Cerrar sesión</button>
   </header>
-
   <div id="notice" class="status" role="status" aria-live="polite">Conectando…</div>
 
   <section id="auth" class="card hidden">
-    <div class="row">
-      <h2 id="authTitle">Crear cuenta</h2>
-      <button id="toggleAuth" class="secondary" type="button">Ya tengo cuenta</button>
-    </div>
+    <div class="row"><h2 id="authTitle">Crear cuenta</h2><button id="toggleAuth" class="secondary" type="button">Ya tengo cuenta</button></div>
     <form id="authForm">
       <div id="signupFields">
-        <label for="fullName">Nombre y apellido</label>
-        <input id="fullName" autocomplete="name" maxlength="120" required>
-
-        <label for="cedula">Cédula</label>
-        <input id="cedula" autocomplete="off" maxlength="24" required>
-
-        <label for="phone">Teléfono</label>
-        <input id="phone" type="tel" autocomplete="tel" maxlength="20" required>
+        <label for="fullName">Nombre y apellido</label><input id="fullName" autocomplete="name" maxlength="120" required>
+        <label for="cedula">Cédula</label><input id="cedula" autocomplete="off" maxlength="24" required>
+        <label for="phone">Teléfono</label><input id="phone" type="tel" autocomplete="tel" maxlength="20" required>
       </div>
-
-      <label for="email">Correo</label>
-      <input id="email" type="email" autocomplete="email" required>
-
-      <label for="password">Contraseña (mínimo 8 caracteres)</label>
-      <input id="password" type="password" autocomplete="current-password" minlength="8" required>
-
-      <div class="actions" style="margin-top:16px">
-        <button id="authSubmit" class="button" type="submit">Crear cuenta</button>
-      </div>
+      <label for="email">Correo</label><input id="email" type="email" autocomplete="email" required>
+      <label for="password">Contraseña (mínimo 8 caracteres)</label><input id="password" type="password" autocomplete="current-password" minlength="8" required>
+      <button id="authSubmit" class="button" type="submit" style="margin-top:14px">Crear cuenta</button>
     </form>
   </section>
 
   <div id="application" class="hidden">
-    <section class="card">
-      <div class="row">
-        <div>
-          <div class="muted">Hola</div>
-          <strong id="welcome"></strong>
-        </div>
-        <div>
-          <div class="muted">Crédito disponible</div>
-          <div id="available" class="amount">Bs. 0,00</div>
-        </div>
-      </div>
-      <div class="row" style="margin-top:12px">
-        <div>Deuda actual <strong id="debt">Bs. 0,00</strong></div>
-        <div>Estado: <span id="role" class="pill">Cliente</span></div>
-      </div>
+    <nav class="nav" aria-label="Navegación principal">
+      <button type="button" data-view="home" aria-current="page">Inicio</button>
+      <button type="button" data-view="profile">Perfil</button>
+      <button type="button" data-view="faq">Preguntas frecuentes</button>
+      <button type="button" data-view="support">Soporte técnico</button>
+    </nav>
+
+    <section id="view-home" class="view">
+      <section class="card">
+        <div class="row"><div><div class="muted">Hola</div><strong id="welcome">Usuario</strong></div><div><div class="muted">Crédito disponible</div><div id="available" class="amount">Bs. 0,00</div></div></div>
+        <div class="row" style="margin-top:12px"><div>Deuda actual <strong id="debt">Bs. 0,00</strong></div><div>Estado: <span id="role" class="pill">Cliente</span></div></div>
+      </section>
+
+      <section class="card" id="creditSection">
+        <h2>Solicitar crédito</h2><p class="muted">Envía una solicitud de crédito de $10. Se revisará manualmente; la solicitud no garantiza aprobación.</p>
+        <button id="creditRequest" class="button" type="button" style="margin-top:14px">Solicitar revisión</button>
+      </section>
+
+      <section class="card" id="rechargeSection">
+        <h2>Solicitar recarga</h2><p class="muted">Elige la operadora, el teléfono y el monto. La solicitud se procesa manualmente; el 10% de comisión se suma a la deuda. No se realiza ninguna recarga hasta que la solicitud sea aprobada.</p>
+        <form id="rechargeForm" style="margin-top:12px">
+          <div class="grid"><div><label for="operator">Operadora</label><select id="operator"><option>Movistar</option><option>Digitel</option><option>Movilnet</option></select></div><div><label for="targetPhone">Teléfono a recargar</label><input id="targetPhone" type="tel" inputmode="numeric" placeholder="04121234567" pattern="04[0-9]{9}" maxlength="11" required></div><div><label for="amountBs">Monto en bolívares</label><input id="amountBs" type="number" min="1" max="100000" step="0.01" required></div></div>
+          <p id="totalPreview" class="muted" style="margin-top:10px">Total estimado con comisión: Bs. 0,00</p><button class="button" type="submit">Enviar solicitud de recarga</button>
+        </form>
+      </section>
+
+      <section class="card"><h2>Reportar un pago</h2><p class="muted">El saldo solo se actualizará después de que administración verifique el pago.</p>
+        <form id="paymentForm"><div class="grid"><div><label for="paymentAmount">Monto en bolívares</label><input id="paymentAmount" type="number" min="0.01" step="0.01" required></div><div><label for="paymentRef">Referencia</label><input id="paymentRef" maxlength="100" required></div></div><button class="button" type="submit" style="margin-top:12px">Enviar pago para verificar</button></form>
+      </section>
+      <section class="card"><h2>Préstamo a cuenta bancaria</h2><p class="muted">Esta opción estará disponible próximamente. Por ahora puedes solicitar crédito para recargas desde Creddy.</p><button class="secondary soon" type="button" disabled>Próximamente</button></section>
+      <section class="card"><h2>Mis movimientos</h2><div id="history" class="muted">Cargando…</div></section>
+      <section id="admin" class="hidden">
+        <div class="card"><h2>Administración</h2><p class="muted">Acceso reservado a cuentas autorizadas. Verifica los pagos externamente y completa las recargas solo después de realizarlas.</p><label for="rate">Tasa BCV (Bs/USD) para nuevas aprobaciones</label><input id="rate" type="number" min="0.01" step="0.01" value="1"><button id="refreshAdmin" class="secondary" type="button" style="margin-top:10px">Actualizar solicitudes</button></div>
+        <div class="card"><h2>Solicitudes de crédito</h2><div id="adminCredits" class="muted">Cargando…</div></div>
+        <div class="card"><h2>Recargas por procesar</h2><div id="adminRecharges" class="muted">Cargando…</div></div>
+        <div class="card"><h2>Pagos por verificar</h2><div id="adminPayments" class="muted">Cargando…</div></div>
+      </section>
     </section>
 
-    <section class="card">
-      <h2>Solicitar crédito</h2>
-      <p class="muted">Envía una solicitud de crédito de $10. Se revisará manualmente; la solicitud no garantiza aprobación.</p>
-      <button id="creditRequest" class="button" type="button" style="margin-top:16px">Solicitar revisión</button>
+    <section id="view-profile" class="view hidden card"><h2>Mi perfil</h2><p class="muted">Actualiza tus datos de contacto. El correo se administra desde tu cuenta de acceso.</p><form id="profileForm"><label for="profileName">Nombre y apellido</label><input id="profileName" maxlength="120" minlength="2" required><label for="profileNationalId">Cédula</label><input id="profileNationalId" maxlength="24" minlength="3" required><label for="profilePhone">Teléfono</label><input id="profilePhone" maxlength="20" minlength="7" required><label>Correo</label><div id="profileEmail" class="pill"></div><button class="button" type="submit" style="margin-top:14px">Guardar perfil</button></form></section>
+
+    <section id="view-faq" class="view hidden card faq"><h2>Preguntas frecuentes</h2>
+      <details><summary>¿Cómo solicito crédito?</summary><p>En Inicio, pulsa “Solicitar revisión”. La solicitud de $10 queda pendiente hasta que administración la revise; enviarla no garantiza aprobación.</p></details>
+      <details><summary>¿Cómo solicito una recarga?</summary><p>Primero debe estar aprobado tu crédito. En Inicio, selecciona operadora, teléfono y monto, revisa el total con comisión y envía la solicitud. La recarga se procesa manualmente.</p></details>
+      <details><summary>¿Cómo reporto un pago?</summary><p>En Inicio, introduce el monto y la referencia. El saldo se actualiza únicamente después de verificar el pago.</p></details>
+      <details><summary>¿Cuándo estará disponible el préstamo a cuenta bancaria?</summary><p>Esta función todavía está en desarrollo y aparece como “Próximamente”.</p></details>
+      <details><summary>¿La app envía recargas automáticamente?</summary><p>No. Las recargas de esta versión piloto son procesadas manualmente por administración.</p></details>
     </section>
 
-    <section class="card">
-      <h2>Solicitar recarga</h2>
-      <p class="muted">La solicitud de recarga se procesa en un tiempo estimado de 5 a 10 minutos; en algunos casos puede tardar más. Te avisaremos cuando esté completada. El 10% se suma a la deuda.</p>
-      <form id="rechargeForm" style="margin-top:16px">
-        <div class="input-grid">
-          <div>
-            <label for="operator">Operador</label>
-            <select id="operator">
-              <option>Movistar</option>
-              <option>Digitel</option>
-              <option>Movilnet</option>
-            </select>
-          </div>
-          <div>
-            <label for="targetPhone">Teléfono a recargar</label>
-            <input id="targetPhone" type="tel" inputmode="numeric" placeholder="04121234567" pattern="04[0-9]{9}" required>
-          </div>
-          <div>
-            <label for="amountBs">Monto Bs</label>
-            <input id="amountBs" type="number" min="1" step="0.01" required>
-          </div>
-        </div>
-        <p id="totalPreview" class="muted" style="margin-top:12px">Total de la deuda: Bs. 0,00</p>
-        <button type="submit" class="button" style="margin-top:12px">Enviar solicitud de recarga</button>
-      </form>
-    </section>
-
-    <section class="card">
-      <h2>Reportar un pago</h2>
-      <p class="muted">Envía el monto y la referencia del pago móvil. El saldo se actualizará después de que lo verifiques.</p>
-      <form id="paymentForm" style="margin-top:16px">
-        <div class="input-grid">
-          <div>
-            <label for="paymentAmount">Monto Bs</label>
-            <input id="paymentAmount" type="number" min="0.01" step="0.01" required>
-          </div>
-          <div>
-            <label for="paymentRef">Referencia</label>
-            <input id="paymentRef" maxlength="100" required>
-          </div>
-        </div>
-        <button type="submit" class="button" style="margin-top:12px">Enviar pago para verificar</button>
-      </form>
-    </section>
-
-    <section class="card">
-      <h2>Mis movimientos</h2>
-      <div id="history" class="muted">Cargando…</div>
-    </section>
-
-    <section id="admin" class="hidden">
-      <div class="card">
-        <h2>Administración</h2>
-        <p class="muted">Solo una cuenta autorizada como administradora puede usar estas acciones. Confirma la recarga externamente antes de marcarla completada.</p>
-        <label for="rate">Tasa BCV (Bs/USD) para nuevas aprobaciones</label>
-        <input id="rate" type="number" min="0.01" step="0.01" value="1">
-        <button id="refreshAdmin" class="secondary" type="button" style="margin-top:12px">Actualizar solicitudes</button>
-      </div>
-
-      <div class="card">
-        <h2>Solicitudes de crédito</h2>
-        <div id="adminCredits" class="muted">Cargando…</div>
-      </div>
-
-      <div class="card">
-        <h2>Recargas por procesar</h2>
-        <div id="adminRecharges" class="muted">Cargando…</div>
-      </div>
-
-      <div class="card">
-        <h2>Pagos por verificar</h2>
-        <div id="adminPayments" class="muted">Cargando…</div>
-      </div>
-    </section>
+    <section id="view-support" class="view hidden card"><h2>Soporte técnico</h2><p>¿Necesitas ayuda con el acceso o una solicitud? Escríbenos por WhatsApp al <strong>0412-6707872</strong>.</p><a class="button big-link" href="https://wa.me/584126707872" target="_blank" rel="noopener noreferrer">Contactar soporte por WhatsApp</a><p class="muted" style="margin-top:12px">No compartas tu contraseña, códigos de verificación ni datos bancarios por chat.</p></section>
   </div>
-
-  <footer class="footer">No compartas tu contraseña. Las recargas se realizan manualmente y solo después de la aprobación correspondiente.</footer>
+  <footer class="footer">No compartas tu contraseña. Las solicitudes se revisan manualmente. Prueba primero con datos ficticios; no uses dinero ni datos reales hasta validar todo el flujo.</footer>
 </main>
-
 <script>
   const SUPABASE_URL = 'https://uqkxpkgwtcxloeawkaiw.supabase.co';
   const SUPABASE_PUBLIC_KEY = 'sb_publishable_sLVgd2ZcQLI3hqXQ7nPOjQ_3CfTbEAs';
   const configured = !SUPABASE_URL.includes('TU_PROYECTO') && !SUPABASE_PUBLIC_KEY.includes('TU_');
   const client = configured ? window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLIC_KEY) : null;
-  const $ = (id) => document.getElementById(id);
+  const $ = id => document.getElementById(id);
   let isSignup = true;
   let currentUser = null;
-
-  const fmt = (n) => Number(n || 0).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  const escapeHtml = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  const showDate = (value) => value ? new Date(value).toLocaleString('es-VE') : '—';
-
-  function notice(text, type = '') {
-    const el = $('notice');
-    el.textContent = text;
-    el.className = 'status' + (type ? ' ' + type : '');
+  let currentProfile = null;
+  const fmt = n => Number(n || 0).toLocaleString('es-VE', {minimumFractionDigits:2, maximumFractionDigits:2});
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const dateText = d => d ? new Date(d).toLocaleString('es-VE') : '—';
+  function notice(text, type='') { $('notice').textContent = text; $('notice').className = 'status' + (type ? ' '+type : ''); }
+  function busy(button, value) { if (button) button.disabled = value; }
+  function showView(name) {
+    document.querySelectorAll('.view').forEach(section => section.classList.toggle('hidden', section.id !== 'view-'+name));
+    document.querySelectorAll('.nav button').forEach(button => button.setAttribute('aria-current', button.dataset.view === name ? 'page' : 'false'));
+    window.scrollTo({top:0, behavior:'smooth'});
   }
 
-  function setBusy(btn, busy) {
-    if (btn) btn.disabled = busy;
+  async function ensureProfile() {
+    // La función SECURITY DEFINER crea únicamente el perfil del usuario autenticado;
+    // no hace falta conceder INSERT directo a todos los usuarios.
+    const { error } = await client.rpc('ensure_creddy_profile');
+    if (error) throw error;
   }
 
   async function loadProfileAndData() {
-    const { data: { user }, error: userError } = await client.auth.getUser();
-    if (userError || !user) {
-      currentUser = null;
-      $('auth').classList.remove('hidden');
-      $('application').classList.add('hidden');
-      $('signout').classList.add('hidden');
+    const { data:{user}, error:userError } = await client.auth.getUser();
+    if (userError) throw userError;
+    if (!user) {
+      currentUser = null; currentProfile = null;
+      $('auth').classList.remove('hidden'); $('application').classList.add('hidden'); $('signout').classList.add('hidden');
       return;
     }
-
     currentUser = user;
-    $('auth').classList.add('hidden');
-    $('application').classList.remove('hidden');
-    $('signout').classList.remove('hidden');
-
-    const { data, error: profileError } = await client
-      .from('app_profiles')
-      .select('full_name,is_admin')
-      .eq('id', user.id)
-      .maybeSingle();
-
+    await ensureProfile();
+    const { data:profile, error:profileError } = await client.from('app_profiles').select('id,full_name,national_id,phone,is_admin').eq('id', user.id).single();
     if (profileError) throw profileError;
-
-    let profile = data;
-    if (!profile) {
-      const { data: created, error: createError } = await client
-        .from('app_profiles')
-        .upsert({
-          id: user.id,
-          full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Usuario',
-          national_id: 'PENDIENTE',
-          phone: 'PENDIENTE',
-          is_admin: false
-        }, { onConflict: 'id' })
-        .select('full_name,is_admin')
-        .single();
-
-      if (createError) throw createError;
-      profile = created;
-    }
-
+    currentProfile = profile;
+    $('auth').classList.add('hidden'); $('application').classList.remove('hidden'); $('signout').classList.remove('hidden');
     $('welcome').textContent = profile.full_name;
     $('role').textContent = profile.is_admin ? 'Administración' : 'Cliente';
     $('admin').classList.toggle('hidden', !profile.is_admin);
-
-    const { data: account, error: accountError } = await client
-      .from('credit_accounts')
-      .select('available_bs,debt_bs')
-      .eq('user_id', user.id)
-      .maybeSingle();
-
+    $('profileName').value = profile.full_name || '';
+    $('profileNationalId').value = profile.national_id || '';
+    $('profilePhone').value = profile.phone || '';
+    $('profileEmail').textContent = user.email || '';
+    const { data:account, error:accountError } = await client.from('credit_accounts').select('available_bs,debt_bs').eq('user_id',user.id).maybeSingle();
     if (accountError) throw accountError;
-
-    $('available').textContent = 'Bs. ' + fmt(account?.available_bs);
-    $('debt').textContent = 'Bs. ' + fmt(account?.debt_bs);
-
+    $('available').textContent = 'Bs. '+fmt(account?.available_bs);
+    $('debt').textContent = 'Bs. '+fmt(account?.debt_bs);
     await loadHistory();
     if (profile.is_admin) await loadAdmin();
   }
 
   async function loadHistory() {
-    const [credits, recharges, payments] = await Promise.all([
-      client.from('credit_requests').select('id,amount_usd,status,created_at').eq('user_id', currentUser.id).order('created_at', { ascending: false }),
-      client.from('recharge_orders').select('id,operator,phone,amount_bs,total_bs,status,created_at').eq('user_id', currentUser.id).order('created_at', { ascending: false }),
-      client.from('payment_reports').select('id,amount_bs,reference,status,created_at').eq('user_id', currentUser.id).order('created_at', { ascending: false })
+    const results = await Promise.all([
+      client.from('credit_requests').select('amount_usd,status,created_at').eq('user_id',currentUser.id).order('created_at',{ascending:false}),
+      client.from('recharge_orders').select('operator,phone,total_bs,status,created_at').eq('user_id',currentUser.id).order('created_at',{ascending:false}),
+      client.from('payment_reports').select('amount_bs,reference,status,created_at').eq('user_id',currentUser.id).order('created_at',{ascending:false})
     ]);
-
-    for (const result of [credits, recharges, payments]) if (result.error) throw result.error;
-
+    for (const result of results) if (result.error) throw result.error;
+    const [credits,recharges,payments] = results;
     const entries = [
-      ...(credits.data || []).map(x => ({ kind: 'Crédito $' + fmt(x.amount_usd), status: x.status, date: x.created_at })),
-      ...(recharges.data || []).map(x => ({ kind: `Recarga ${x.operator} ${x.phone} - Bs. ${fmt(x.total_bs)}`, status: x.status, date: x.created_at })),
-      ...(payments.data || []).map(x => ({ kind: `Pago Bs. ${fmt(x.amount_bs)} - ref. ${x.reference}`, status: x.status, date: x.created_at }))
-    ].sort((a, b) => new Date(b.date) - new Date(a.date));
-
-    $('history').innerHTML = entries.length
-      ? entries.map(x => `<div class="item"><div class="row"><strong>${escapeHtml(x.kind)}</strong><span class="pill">${escapeHtml(x.status)}</span></div><small>${escapeHtml(showDate(x.date))}</small></div>`).join('')
-      : 'No tienes movimientos aún.';
+      ...(credits.data||[]).map(x=>({kind:'Crédito $'+fmt(x.amount_usd),status:x.status,date:x.created_at})),
+      ...(recharges.data||[]).map(x=>({kind:`Recarga ${x.operator} ${x.phone} · Bs. ${fmt(x.total_bs)}`,status:x.status,date:x.created_at})),
+      ...(payments.data||[]).map(x=>({kind:`Pago Bs. ${fmt(x.amount_bs)} · ref. ${x.reference}`,status:x.status,date:x.created_at}))
+    ].sort((a,b)=>new Date(b.date)-new Date(a.date));
+    $('history').innerHTML = entries.length ? entries.map(x=>`<div class="item"><div class="row"><strong>${esc(x.kind)}</strong><span class="pill">${esc(x.status)}</span></div><small>${esc(dateText(x.date))}</small></div>`).join('') : 'Todavía no tienes movimientos.';
   }
 
   async function loadAdmin() {
-    const [credits, recharges, payments] = await Promise.all([
-      client.from('credit_requests').select('id,user_id,amount_usd,created_at').eq('status', 'pending').order('created_at'),
-      client.from('recharge_orders').select('id,user_id,operator,phone,amount_bs,total_bs,created_at').eq('status', 'pending').order('created_at'),
-      client.from('payment_reports').select('id,user_id,amount_bs,reference,created_at').eq('status', 'pending').order('created_at')
+    const results = await Promise.all([
+      client.from('credit_requests').select('id,user_id,amount_usd,created_at').eq('status','pending').order('created_at'),
+      client.from('recharge_orders').select('id,user_id,operator,phone,amount_bs,total_bs,created_at').eq('status','pending').order('created_at'),
+      client.from('payment_reports').select('id,user_id,amount_bs,reference,created_at').eq('status','pending').order('created_at')
     ]);
-
-    for (const result of [credits, recharges, payments]) if (result.error) throw result.error;
-
-    const ids = [...new Set([...(credits.data || []), ...(recharges.data || []), ...(payments.data || [])].map(x => x.user_id))];
+    for (const result of results) if (result.error) throw result.error;
+    const [credits,recharges,payments] = results;
+    const ids = [...new Set([...credits.data,...recharges.data,...payments.data].map(x=>x.user_id))];
     let profiles = {};
-
     if (ids.length) {
-      const { data, error } = await client.from('app_profiles').select('id,full_name,phone,national_id').in('id', ids);
+      const {data,error} = await client.from('app_profiles').select('id,full_name,phone,national_id').in('id',ids);
       if (error) throw error;
-      profiles = Object.fromEntries((data || []).map(x => [x.id, x]));
+      profiles = Object.fromEntries((data||[]).map(p=>[p.id,p]));
     }
-
-    $('adminCredits').innerHTML = credits.data.length
-      ? credits.data.map(x => `<div class="item"><strong>${escapeHtml(profiles[x.user_id]?.full_name || 'Cliente')}</strong><div><small>Cédula ${escapeHtml(profiles[x.user_id]?.national_id || '')} · ${escapeHtml(fmt(x.amount_usd))} USD</small></div><div class="admin-actions"><button data-action="approve-credit" data-id="${x.id}">Aprobar</button><button data-action="reject-credit" data-id="${x.id}" class="danger">Rechazar</button></div></div>`).join('')
-      : 'No hay solicitudes pendientes.';
-
-    $('adminRecharges').innerHTML = recharges.data.length
-      ? recharges.data.map(x => `<div class="item"><strong>${escapeHtml(profiles[x.user_id]?.full_name || 'Cliente')}</strong><div><small>${escapeHtml(x.operator)} · ${escapeHtml(x.phone)} · Bs. ${escapeHtml(fmt(x.amount_bs))}</small></div><div class="admin-actions"><button data-action="complete-recharge" data-id="${x.id}">Completar</button><button data-action="reject-recharge" data-id="${x.id}" class="danger">Rechazar</button></div></div>`).join('')
-      : 'No hay recargas pendientes.';
-
-    $('adminPayments').innerHTML = payments.data.length
-      ? payments.data.map(x => `<div class="item"><strong>${escapeHtml(profiles[x.user_id]?.full_name || 'Cliente')}</strong><div><small>Cédula ${escapeHtml(profiles[x.user_id]?.national_id || '')} · Bs. ${escapeHtml(fmt(x.amount_bs))} · Ref. ${escapeHtml(x.reference)}</small></div><div class="admin-actions"><button data-action="confirm-payment" data-id="${x.id}">Confirmar</button><button data-action="reject-payment" data-id="${x.id}" class="danger">Rechazar</button></div></div>`).join('')
-      : 'No hay pagos pendientes.';
+    $('adminCredits').innerHTML = credits.data.length ? credits.data.map(x=>`<div class="item"><strong>${esc(profiles[x.user_id]?.full_name||'Cliente')}</strong><div><small>${esc(profiles[x.user_id]?.national_id||'')} · $${fmt(x.amount_usd)} · ${esc(dateText(x.created_at))}</small></div><div class="admin-actions"><button data-action="approve-credit" data-id="${x.id}">Aprobar</button><button class="danger" data-action="reject-credit" data-id="${x.id}">Rechazar</button></div></div>`).join('') : 'No hay solicitudes pendientes.';
+    $('adminRecharges').innerHTML = recharges.data.length ? recharges.data.map(x=>`<div class="item"><strong>${esc(profiles[x.user_id]?.full_name||'Cliente')}</strong><div><small>${esc(x.operator)} · ${esc(x.phone)} · Bs. ${fmt(x.amount_bs)} (deuda total Bs. ${fmt(x.total_bs)})</small></div><div class="admin-actions"><button data-action="complete-recharge" data-id="${x.id}">Marcar completada</button><button class="danger" data-action="reject-recharge" data-id="${x.id}">Rechazar</button></div></div>`).join('') : 'No hay recargas pendientes.';
+    $('adminPayments').innerHTML = payments.data.length ? payments.data.map(x=>`<div class="item"><strong>${esc(profiles[x.user_id]?.full_name||'Cliente')}</strong><div><small>${esc(profiles[x.user_id]?.national_id||'')} · Bs. ${fmt(x.amount_bs)} · Ref. ${esc(x.reference)}</small></div><div class="admin-actions"><button data-action="confirm-payment" data-id="${x.id}">Confirmar pago verificado</button><button class="danger" data-action="reject-payment" data-id="${x.id}">Rechazar</button></div></div>`).join('') : 'No hay pagos pendientes.';
   }
 
-  $('toggleAuth').addEventListener('click', () => {
+  document.querySelectorAll('.nav button').forEach(button=>button.addEventListener('click',()=>showView(button.dataset.view)));
+  $('toggleAuth').addEventListener('click',()=>{
     isSignup = !isSignup;
     $('authTitle').textContent = isSignup ? 'Crear cuenta' : 'Iniciar sesión';
     $('authSubmit').textContent = isSignup ? 'Crear cuenta' : 'Iniciar sesión';
-    $('signupFields').classList.toggle('hidden', !isSignup);
+    $('signupFields').classList.toggle('hidden',!isSignup);
+    $('toggleAuth').textContent = isSignup ? 'Ya tengo cuenta' : 'Crear cuenta';
   });
 
-  $('authForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const btn = $('authSubmit');
-    setBusy(btn, true);
+  $('authForm').addEventListener('submit',async e=>{
+    e.preventDefault(); const button=$('authSubmit'); busy(button,true);
     try {
-      const email = $('email').value.trim();
-      const password = $('password').value;
-
+      const email=$('email').value.trim(), password=$('password').value;
       if (isSignup) {
-        const { error } = await client.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              full_name: $('fullName').value.trim(),
-              national_id: $('cedula').value.trim(),
-              phone: $('phone').value.trim()
-            }
-          }
-        });
-        if (error) throw error;
-        notice('Cuenta creada. Revisa tu correo para confirmar la sesión.', 'ok');
+        const {error}=await client.auth.signUp({email,password,options:{data:{full_name:$('fullName').value.trim(),national_id:$('cedula').value.trim(),phone:$('phone').value.trim()}}});
+        if(error) throw error;
+        notice('Cuenta creada. Si la confirmación está habilitada, revisa tu correo y luego inicia sesión.','ok');
       } else {
-        const { error } = await client.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-        notice('Sesión iniciada.', 'ok');
+        const {error}=await client.auth.signInWithPassword({email,password});
+        if(error) throw error;
+        await loadProfileAndData(); showView('home'); notice('Sesión iniciada.','ok');
       }
-
-      await loadProfileAndData();
-    } catch (err) {
-      notice(err.message || 'No se pudo completar la operación.', 'error');
-    } finally {
-      setBusy(btn, false);
-    }
+    } catch(error) { notice(error.message||'No se pudo completar la operación.','error'); }
+    finally { busy(button,false); }
   });
 
-  $('signout').addEventListener('click', async () => {
-    const { error } = await client.auth.signOut();
-    if (error) {
-      notice(error.message, 'error');
-    } else {
-      notice('Sesión cerrada.');
-      await loadProfileAndData();
-    }
-  });
-
-  $('creditRequest').addEventListener('click', async () => {
-    setBusy($('creditRequest'), true);
+  $('signout').addEventListener('click',async()=>{const {error}=await client.auth.signOut();if(error)notice(error.message,'error');else{showView('home');await loadProfileAndData();notice('Sesión cerrada.');}});
+  $('profileForm').addEventListener('submit',async e=>{
+    e.preventDefault(); const button=e.submitter; busy(button,true);
     try {
-      const { error } = await client.rpc('request_credit');
-      if (error) throw error;
-      notice('Solicitud enviada para revisión.', 'ok');
-      await loadProfileAndData();
-    } catch (err) {
-      notice(err.message || 'No se pudo enviar la solicitud.', 'error');
-    } finally {
-      setBusy($('creditRequest'), false);
-    }
+      const {error}=await client.from('app_profiles').update({full_name:$('profileName').value.trim(),national_id:$('profileNationalId').value.trim(),phone:$('profilePhone').value.trim()}).eq('id',currentUser.id);
+      if(error) throw error;
+      await loadProfileAndData(); notice('Perfil actualizado.','ok');
+    } catch(error) { notice(error.message||'No se pudo guardar el perfil.','error'); }
+    finally { busy(button,false); }
   });
-
-  $('amountBs').addEventListener('input', () => {
-    $('totalPreview').textContent = 'Total de la deuda: Bs. ' + fmt(Number($('amountBs').value || 0) * 1.1);
-  });
-
-  $('rechargeForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const btn = e.submitter;
-    setBusy(btn, true);
+  $('creditRequest').addEventListener('click',async()=>{const button=$('creditRequest');busy(button,true);try{const {error}=await client.rpc('request_credit');if(error)throw error;notice('Solicitud enviada para revisión.','ok');await loadProfileAndData();}catch(error){notice(error.message||'No se pudo enviar la solicitud.','error');}finally{busy(button,false);}});
+  $('amountBs').addEventListener('input',()=>{$('totalPreview').textContent='Total estimado con comisión: Bs. '+fmt(Number($('amountBs').value||0)*1.1);});
+  $('rechargeForm').addEventListener('submit',async e=>{e.preventDefault();const button=e.submitter;busy(button,true);try{const {error}=await client.rpc('request_recharge',{p_operator:$('operator').value,p_phone:$('targetPhone').value.trim(),p_amount_bs:Number($('amountBs').value)});if(error)throw error;notice('Solicitud de recarga enviada para revisión.','ok');$('rechargeForm').reset();$('totalPreview').textContent='Total estimado con comisión: Bs. 0,00';await loadProfileAndData();}catch(error){notice(error.message||'No se pudo enviar la recarga.','error');}finally{busy(button,false);}});
+  $('paymentForm').addEventListener('submit',async e=>{e.preventDefault();const button=e.submitter;busy(button,true);try{const {error}=await client.rpc('submit_payment_report',{p_amount_bs:Number($('paymentAmount').value),p_reference:$('paymentRef').value.trim()});if(error)throw error;notice('Pago enviado para verificación.','ok');$('paymentForm').reset();await loadProfileAndData();}catch(error){notice(error.message||'No se pudo reportar el pago.','error');}finally{busy(button,false);}});
+  $('refreshAdmin').addEventListener('click',()=>loadProfileAndData().catch(error=>notice(error.message,'error')));
+  $('admin').addEventListener('click',async e=>{
+    const button=e.target.closest('button[data-action]'); if(!button)return; busy(button,true);
     try {
-      const { error } = await client.rpc('request_recharge', {
-        p_operator: $('operator').value,
-        p_phone: $('targetPhone').value.trim(),
-        p_amount_bs: Number($('amountBs').value)
-      });
-      if (error) throw error;
-      notice('Tu recarga fue enviada para revisión.', 'ok');
-      $('rechargeForm').reset();
-      $('totalPreview').textContent = 'Total de la deuda: Bs. 0,00';
-      await loadProfileAndData();
-    } catch (err) {
-      notice(err.message || 'No se pudo enviar la recarga.', 'error');
-    } finally {
-      setBusy(btn, false);
-    }
+      const id=button.dataset.id, action=button.dataset.action; let result;
+      if(action==='approve-credit') result=await client.rpc('admin_review_credit',{p_request_id:id,p_approved:true,p_bcv_rate:Number($('rate').value)});
+      else if(action==='reject-credit') result=await client.rpc('admin_review_credit',{p_request_id:id,p_approved:false,p_bcv_rate:null});
+      else if(action==='complete-recharge') result=await client.rpc('admin_set_recharge_status',{p_recharge_id:id,p_status:'completed'});
+      else if(action==='reject-recharge') result=await client.rpc('admin_set_recharge_status',{p_recharge_id:id,p_status:'rejected'});
+      else if(action==='confirm-payment') result=await client.rpc('admin_review_payment',{p_payment_id:id,p_approved:true});
+      else if(action==='reject-payment') result=await client.rpc('admin_review_payment',{p_payment_id:id,p_approved:false});
+      if(result?.error)throw result.error; notice('Acción guardada.','ok'); await loadProfileAndData();
+    } catch(error) { notice(error.message||'No se pudo completar la acción.','error'); }
+    finally { busy(button,false); }
   });
 
-  $('paymentForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const btn = e.submitter;
-    setBusy(btn, true);
-    try {
-      const { error } = await client.rpc('submit_payment_report', {
-        p_amount_bs: Number($('paymentAmount').value),
-        p_reference: $('paymentRef').value.trim()
-      });
-      if (error) throw error;
-      notice('Pago enviado para verificar.', 'ok');
-      $('paymentForm').reset();
-      await loadProfileAndData();
-    } catch (err) {
-      notice(err.message || 'No se pudo enviar el pago.', 'error');
-    } finally {
-      setBusy(btn, false);
-    }
-  });
-
-  $('refreshAdmin').addEventListener('click', () => loadProfileAndData().catch(e => notice(e.message, 'error')));
-
-  $('admin').addEventListener('click', async (e) => {
-    const btn = e.target.closest('button[data-action]');
-    if (!btn) return;
-    setBusy(btn, true);
-    try {
-      const id = btn.dataset.id;
-      const action = btn.dataset.action;
-      let result;
-
-      if (action === 'approve-credit') {
-        result = await client.rpc('admin_review_credit', {
-          p_request_id: id,
-          p_approved: true,
-          p_bcv_rate: Number($('rate').value)
-        });
-      } else if (action === 'reject-credit') {
-        result = await client.rpc('admin_review_credit', {
-          p_request_id: id,
-          p_approved: false,
-          p_bcv_rate: null
-        });
-      } else if (action === 'complete-recharge') {
-        result = await client.rpc('admin_set_recharge_status', {
-          p_recharge_id: id,
-          p_status: 'completed'
-        });
-      } else if (action === 'reject-recharge') {
-        result = await client.rpc('admin_set_recharge_status', {
-          p_recharge_id: id,
-          p_status: 'rejected'
-        });
-      } else if (action === 'confirm-payment') {
-        result = await client.rpc('admin_review_payment', {
-          p_payment_id: id,
-          p_approved: true
-        });
-      } else if (action === 'reject-payment') {
-        result = await client.rpc('admin_review_payment', {
-          p_payment_id: id,
-          p_approved: false
-        });
-      }
-
-      if (result?.error) throw result.error;
-      notice('Acción aplicada.', 'ok');
-      await loadProfileAndData();
-    } catch (err) {
-      notice(err.message || 'No se pudo completar la acción.', 'error');
-    } finally {
-      setBusy(btn, false);
-    }
-  });
-
-  (async () => {
-    if (!configured) {
-      $('auth').classList.remove('hidden');
-      notice('Falta configurar Project URL en este archivo. No uses la secret/service_role key.', 'error');
-      return;
-    }
-
-    try {
-      await loadProfileAndData();
-      if (!currentUser) notice('Inicia sesión o crea una cuenta.', 'ok');
-    } catch (err) {
-      notice(err.message || 'No se pudo cargar la app.', 'error');
-    }
+  (async()=>{
+    if(!configured){$('auth').classList.remove('hidden');notice('Falta configurar Supabase en la app. No uses una clave secret/service_role en el navegador.','error');return;}
+    try { await loadProfileAndData(); if(!currentUser)notice('Inicia sesión o crea una cuenta.','ok'); }
+    catch(error) { notice(error.message||'No se pudo cargar la app. Ejecuta la actualización de Supabase indicada en el archivo SQL del repositorio.','error'); }
   })();
 </script>
 </body>

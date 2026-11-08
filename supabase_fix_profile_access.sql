@@ -1,6 +1,6 @@
--- Creddy: repair app_profiles permissions and safely create a missing profile.
--- Run this once in the SQL Editor of the Supabase project used by the app.
--- It does not delete or alter existing profile data.
+-- Creddy: secure app_profiles repair and initialization.
+-- Run this once in Supabase SQL Editor for the project used by the app.
+-- Existing profile data is not deleted or changed.
 
 begin;
 
@@ -23,8 +23,8 @@ $$;
 revoke all on function public.is_creddy_admin() from public, anon;
 grant execute on function public.is_creddy_admin() to authenticated;
 
--- Only create a profile for the currently authenticated user. This prevents
--- users from choosing another user's id or granting themselves admin access.
+-- A caller may initialize only their own profile; no direct INSERT permission
+-- is granted to authenticated users, and is_admin is always initialized false.
 create or replace function public.ensure_creddy_profile()
 returns void
 language plpgsql
@@ -57,9 +57,10 @@ grant execute on function public.ensure_creddy_profile() to authenticated;
 
 alter table public.app_profiles enable row level security;
 
--- Replace policies on this table to remove any recursive/overly broad rules.
+-- Remove conflicting/recursive policies only from app_profiles; table data remains.
 do $$
-declare policy_row record;
+declare
+  policy_row record;
 begin
   for policy_row in
     select policyname
@@ -72,11 +73,15 @@ end;
 $$;
 
 create policy app_profiles_read_self_or_admin
-on public.app_profiles for select to authenticated
+on public.app_profiles
+for select
+to authenticated
 using (id = (select auth.uid()) or public.is_creddy_admin());
 
 create policy app_profiles_update_self
-on public.app_profiles for update to authenticated
+on public.app_profiles
+for update
+to authenticated
 using (id = (select auth.uid()))
 with check (id = (select auth.uid()));
 
