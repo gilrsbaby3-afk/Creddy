@@ -4,6 +4,8 @@
 
 begin;
 
+grant usage on schema public to authenticated;
+
 create or replace function public.is_creddy_admin()
 returns boolean
 language sql
@@ -90,3 +92,6 @@ grant select on public.app_profiles to authenticated;
 grant update (full_name, national_id, phone) on public.app_profiles to authenticated;
 
 commit;
+
+-- Refresh PostgREST's function/schema cache so client.rpc() can find the RPC.
+notify pgrst, 'reload schema';
