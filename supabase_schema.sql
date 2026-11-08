@@ -1,7 +1,11 @@
--- Creddy: secure manual-credit/recharge pilot schema.
--- Run in Supabase SQL Editor for the project. This uses new app_* tables and does not drop legacy data.
+-- Creddy: complete, repeatable Supabase setup for the current web app.
+-- Run the whole file in the SQL Editor of the same Supabase project configured in index.html.
+-- It creates/updates application objects and access policies; it does not delete application data.
+
+begin;
 
 create extension if not exists pgcrypto;
+grant usage on schema public to authenticated;
 
 create table if not exists public.app_profiles (
   id uuid primary key references auth.users(id) on delete cascade,
@@ -63,32 +67,30 @@ create index if not exists credit_requests_pending_idx on public.credit_requests
 create index if not exists recharge_orders_pending_idx on public.recharge_orders(status, created_at);
 create index if not exists payment_reports_pending_idx on public.payment_reports(status, created_at);
 
+-- Safe admin check for use by RLS policies (avoids recursive profile policies).
 create or replace function public.is_creddy_admin()
-returns boolean
-language sql
-stable
-security definer
-set search_path = ''
+returns boolean language sql stable security definer
+set search_path = '' set row_security = off
 as $$
   select exists (
     select 1 from public.app_profiles p
-    where p.id = (select auth.uid()) and p.is_admin
+    where p.id = (select auth.uid()) and p.is_admin = true
   );
 $$;
 
+-- Create profile rows automatically on registration, preserving signup metadata.
 create or replace function public.handle_creddy_signup()
-returns trigger
-language plpgsql
-security definer
-set search_path = ''
+returns trigger language plpgsql security definer
+set search_path = '' set row_security = off
 as $$
 begin
-  insert into public.app_profiles (id, full_name, national_id, phone)
+  insert into public.app_profiles (id, full_name, national_id, phone, is_admin)
   values (
     new.id,
-    coalesce(nullif(trim(new.raw_user_meta_data ->> 'full_name'), ''), 'Nombre pendiente'),
-    coalesce(nullif(trim(new.raw_user_meta_data ->> 'national_id'), ''), 'PENDIENTE'),
-    coalesce(nullif(trim(new.raw_user_meta_data ->> 'phone'), ''), 'PENDIENTE')
+    left(coalesce(nullif(trim(new.raw_user_meta_data ->> 'full_name'), ''), 'Usuario'), 120),
+    left(coalesce(nullif(trim(new.raw_user_meta_data ->> 'national_id'), ''), 'PENDIENTE'), 24),
+    left(coalesce(nullif(trim(new.raw_user_meta_data ->> 'phone'), ''), 'PENDIENTE'), 20),
+    false
   )
   on conflict (id) do nothing;
   return new;
@@ -97,31 +99,48 @@ $$;
 
 drop trigger if exists on_creddy_auth_user_created on auth.users;
 create trigger on_creddy_auth_user_created
-after insert on auth.users
-for each row execute function public.handle_creddy_signup();
+after insert on auth.users for each row execute function public.handle_creddy_signup();
+
+-- This RPC is called by the current frontend after login; it only initializes the caller's own profile.
+create or replace function public.ensure_creddy_profile()
+returns void language plpgsql security definer
+set search_path = '' set row_security = off
+as $$
+declare
+  current_id uuid := (select auth.uid());
+  meta jsonb := coalesce((select auth.jwt()) -> 'user_metadata', '{}'::jsonb);
+begin
+  if current_id is null then raise exception 'Debes iniciar sesión'; end if;
+  insert into public.app_profiles(id, full_name, national_id, phone, is_admin)
+  values (
+    current_id,
+    left(coalesce(nullif(trim(meta ->> 'full_name'), ''), 'Usuario'), 120),
+    left(coalesce(nullif(trim(meta ->> 'national_id'), ''), 'PENDIENTE'), 24),
+    left(coalesce(nullif(trim(meta ->> 'phone'), ''), 'PENDIENTE'), 20),
+    false
+  ) on conflict (id) do nothing;
+end;
+$$;
 
 create or replace function public.request_credit()
-returns uuid
-language plpgsql
-security definer
-set search_path = ''
+returns uuid language plpgsql security definer
+set search_path = '' set row_security = off
 as $$
 declare new_id uuid;
 begin
   if (select auth.uid()) is null then raise exception 'Debes iniciar sesión'; end if;
-  if exists (select 1 from public.credit_requests r where r.user_id = (select auth.uid()) and r.status = 'pending') then
-    raise exception 'Ya tienes una solicitud de crédito pendiente';
-  end if;
+  if exists (
+    select 1 from public.credit_requests r
+    where r.user_id = (select auth.uid()) and r.status = 'pending'
+  ) then raise exception 'Ya tienes una solicitud de crédito pendiente'; end if;
   insert into public.credit_requests(user_id) values ((select auth.uid())) returning id into new_id;
   return new_id;
 end;
 $$;
 
 create or replace function public.admin_review_credit(p_request_id uuid, p_approved boolean, p_bcv_rate numeric default null)
-returns void
-language plpgsql
-security definer
-set search_path = ''
+returns void language plpgsql security definer
+set search_path = '' set row_security = off
 as $$
 declare req public.credit_requests%rowtype; grant_bs numeric(14,2);
 begin
@@ -142,18 +161,22 @@ begin
 end;
 $$;
 
+-- Enforce operator minimums in the database, not just in the browser.
 create or replace function public.request_recharge(p_operator text, p_phone text, p_amount_bs numeric)
-returns uuid
-language plpgsql
-security definer
-set search_path = ''
+returns uuid language plpgsql security definer
+set search_path = '' set row_security = off
 as $$
-declare acct public.credit_accounts%rowtype; new_id uuid; charge numeric(14,2); fee numeric(14,2);
+declare
+  acct public.credit_accounts%rowtype; new_id uuid;
+  charge numeric(14,2); fee numeric(14,2); minimum_amount numeric(14,2);
 begin
   if (select auth.uid()) is null then raise exception 'Debes iniciar sesión'; end if;
   if p_operator not in ('Movistar','Digitel','Movilnet') then raise exception 'Operadora no válida'; end if;
   if p_phone !~ '^04[0-9]{9}$' then raise exception 'El teléfono debe tener 11 dígitos y comenzar con 04'; end if;
-  if p_amount_bs is null or p_amount_bs <= 0 or p_amount_bs > 100000 then raise exception 'Monto no válido'; end if;
+  minimum_amount := case when p_operator = 'Movilnet' then 400 else 500 end;
+  if p_amount_bs is null or p_amount_bs < minimum_amount or p_amount_bs > 100000 then
+    raise exception 'El monto mínimo para % es Bs. %; máximo Bs. 100000', p_operator, minimum_amount;
+  end if;
   fee := round(p_amount_bs * 0.10, 2); charge := p_amount_bs + fee;
   select * into acct from public.credit_accounts where user_id=(select auth.uid()) for update;
   if not found or acct.available_bs < p_amount_bs then raise exception 'Crédito disponible insuficiente'; end if;
@@ -165,10 +188,8 @@ end;
 $$;
 
 create or replace function public.admin_set_recharge_status(p_recharge_id uuid, p_status text)
-returns void
-language plpgsql
-security definer
-set search_path = ''
+returns void language plpgsql security definer
+set search_path = '' set row_security = off
 as $$
 declare rec public.recharge_orders%rowtype;
 begin
@@ -178,16 +199,15 @@ begin
   if not found or rec.status <> 'pending' then raise exception 'La recarga no existe o ya fue revisada'; end if;
   update public.recharge_orders set status=p_status, reviewed_at=now(), reviewed_by=(select auth.uid()) where id=p_recharge_id;
   if p_status='rejected' then
-    update public.credit_accounts set available_bs=available_bs+rec.amount_bs, debt_bs=greatest(0,debt_bs-rec.total_bs), updated_at=now() where user_id=rec.user_id;
+    update public.credit_accounts set available_bs=available_bs+rec.amount_bs,
+      debt_bs=greatest(0,debt_bs-rec.total_bs), updated_at=now() where user_id=rec.user_id;
   end if;
 end;
 $$;
 
 create or replace function public.submit_payment_report(p_amount_bs numeric, p_reference text)
-returns uuid
-language plpgsql
-security definer
-set search_path = ''
+returns uuid language plpgsql security definer
+set search_path = '' set row_security = off
 as $$
 declare acct public.credit_accounts%rowtype; new_id uuid;
 begin
@@ -202,10 +222,8 @@ end;
 $$;
 
 create or replace function public.admin_review_payment(p_payment_id uuid, p_approved boolean)
-returns void
-language plpgsql
-security definer
-set search_path = ''
+returns void language plpgsql security definer
+set search_path = '' set row_security = off
 as $$
 declare pay public.payment_reports%rowtype; acct public.credit_accounts%rowtype;
 begin
@@ -224,13 +242,17 @@ begin
 end;
 $$;
 
-create or replace function public.is_admin_for_app()
-returns boolean
-language sql
-stable
-security definer
-set search_path = ''
-as $$ select public.is_creddy_admin(); $$;
+-- Reset policies only for Creddy app tables, then apply owner/admin access rules.
+do $$
+declare p record;
+begin
+  for p in select schemaname, tablename, policyname from pg_policies
+           where schemaname='public' and tablename in ('app_profiles','credit_requests','credit_accounts','recharge_orders','payment_reports')
+  loop
+    execute format('drop policy %I on %I.%I', p.policyname, p.schemaname, p.tablename);
+  end loop;
+end;
+$$;
 
 alter table public.app_profiles enable row level security;
 alter table public.credit_requests enable row level security;
@@ -238,36 +260,39 @@ alter table public.credit_accounts enable row level security;
 alter table public.recharge_orders enable row level security;
 alter table public.payment_reports enable row level security;
 
-drop policy if exists app_profiles_read_self_or_admin on public.app_profiles;
-create policy app_profiles_read_self_or_admin on public.app_profiles for select to authenticated using (id=(select auth.uid()) or public.is_creddy_admin());
-drop policy if exists app_profiles_update_self on public.app_profiles;
-create policy app_profiles_update_self on public.app_profiles for update to authenticated using (id=(select auth.uid())) with check (id=(select auth.uid()) and is_admin=false);
-
-drop policy if exists credit_requests_read_owner_admin on public.credit_requests;
-create policy credit_requests_read_owner_admin on public.credit_requests for select to authenticated using (user_id=(select auth.uid()) or public.is_creddy_admin());
-drop policy if exists credit_accounts_read_owner_admin on public.credit_accounts;
-create policy credit_accounts_read_owner_admin on public.credit_accounts for select to authenticated using (user_id=(select auth.uid()) or public.is_creddy_admin());
-drop policy if exists recharge_orders_read_owner_admin on public.recharge_orders;
-create policy recharge_orders_read_owner_admin on public.recharge_orders for select to authenticated using (user_id=(select auth.uid()) or public.is_creddy_admin());
-drop policy if exists payment_reports_read_owner_admin on public.payment_reports;
-create policy payment_reports_read_owner_admin on public.payment_reports for select to authenticated using (user_id=(select auth.uid()) or public.is_creddy_admin());
+create policy app_profiles_read_self_or_admin on public.app_profiles for select to authenticated
+using (id=(select auth.uid()) or public.is_creddy_admin());
+create policy app_profiles_update_self on public.app_profiles for update to authenticated
+using (id=(select auth.uid())) with check (id=(select auth.uid()));
+create policy credit_requests_read_owner_admin on public.credit_requests for select to authenticated
+using (user_id=(select auth.uid()) or public.is_creddy_admin());
+create policy credit_accounts_read_owner_admin on public.credit_accounts for select to authenticated
+using (user_id=(select auth.uid()) or public.is_creddy_admin());
+create policy recharge_orders_read_owner_admin on public.recharge_orders for select to authenticated
+using (user_id=(select auth.uid()) or public.is_creddy_admin());
+create policy payment_reports_read_owner_admin on public.payment_reports for select to authenticated
+using (user_id=(select auth.uid()) or public.is_creddy_admin());
 
 revoke all on public.app_profiles, public.credit_requests, public.credit_accounts, public.recharge_orders, public.payment_reports from anon, authenticated;
 grant select on public.app_profiles, public.credit_requests, public.credit_accounts, public.recharge_orders, public.payment_reports to authenticated;
-grant update(full_name,national_id,phone) on public.app_profiles to authenticated;
+grant update (full_name,national_id,phone) on public.app_profiles to authenticated;
+
 revoke all on function public.is_creddy_admin() from public, anon;
+revoke all on function public.ensure_creddy_profile() from public, anon;
 revoke all on function public.request_credit() from public, anon;
 revoke all on function public.admin_review_credit(uuid,boolean,numeric) from public, anon;
 revoke all on function public.request_recharge(text,text,numeric) from public, anon;
 revoke all on function public.admin_set_recharge_status(uuid,text) from public, anon;
 revoke all on function public.submit_payment_report(numeric,text) from public, anon;
 revoke all on function public.admin_review_payment(uuid,boolean) from public, anon;
-revoke all on function public.is_admin_for_app() from public, anon;
 grant execute on function public.is_creddy_admin() to authenticated;
+grant execute on function public.ensure_creddy_profile() to authenticated;
 grant execute on function public.request_credit() to authenticated;
 grant execute on function public.admin_review_credit(uuid,boolean,numeric) to authenticated;
 grant execute on function public.request_recharge(text,text,numeric) to authenticated;
 grant execute on function public.admin_set_recharge_status(uuid,text) to authenticated;
 grant execute on function public.submit_payment_report(numeric,text) to authenticated;
 grant execute on function public.admin_review_payment(uuid,boolean) to authenticated;
-grant execute on function public.is_admin_for_app() to authenticated;
+
+commit;
+notify pgrst, 'reload schema';
