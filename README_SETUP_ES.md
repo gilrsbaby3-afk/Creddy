@@ -2,10 +2,6 @@
 
 Esta versión registra clientes con correo/contraseña, guarda nombre, cédula y teléfono, permite pedir revisión de crédito, solicitar una recarga procesada manualmente y reportar pagos. La aprobación y confirmación de pagos están protegidas por funciones SQL y el rol administrador de Supabase. No se conecta a una operadora ni ejecuta recargas automáticamente.
 
-## Antes de usar
-
-- Haz estas pruebas primero con cuentas ficticias, sin dinero ni datos reales. Confirma con tu asesor local los requisitos legales y de privacidad para manejar datos de identificación y crédito.
-
 ## Supabase
 
 1. Abre el proyecto correcto → **SQL Editor** → crea una consulta nueva.
